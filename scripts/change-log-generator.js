@@ -64,7 +64,7 @@ function getReleaseBranch() {
 function getReleaseBranches() {
   return shell
     .exec("git branch -r -l --sort='-creatordate' 'origin/release/v*'", {
-      silent: true
+      silent: !ADD_VERBOSE_LOGGING
     })
     .replace(/\n/g, ',')
     .split(',')
@@ -160,7 +160,7 @@ function buildMapFromCommit(commit) {
 function getFilesChanged(commitNumber) {
   return shell
     .exec('git show --pretty="" --name-only ' + commitNumber, {
-      silent: true
+      silent: !ADD_VERBOSE_LOGGING
     })
     .stdout.trim()
     .toString()
