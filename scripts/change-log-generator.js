@@ -108,7 +108,7 @@ function getCommits(releaseBranch) {
   var commits = shell
     .exec(
       util.format(
-        'git log --cherry-pick --oneline %s...origin/master',
+        'git log --no-merges --oneline %s ^origin/master',
         releaseBranch
       ),
       {
