@@ -44,20 +44,6 @@ const PR_REGEX = new RegExp(/(\(#\d+\))/);
 const COMMIT_REGEX = new RegExp(/^([\da-zA-Z]+)/);
 
 /**
- * Checks if the user has provided a release branch override. If they
- * have not, returns the latest release branch.
- */
-function getReleaseBranch() {
-  var releaseIndex = process.argv.indexOf('-r');
-  var releaseBranch =
-    releaseIndex > -1
-      ? 'origin/release/v' + process.argv[releaseIndex + 1]
-      : getReleaseBranches()[0];
-  validateReleaseBranch(releaseBranch);
-  return releaseBranch;
-}
-
-/**
  * Returns a list of remote release branches, sorted in reverse order by
  * creation date. This ensures that the first entry is the latest branch.
  */
@@ -75,9 +61,22 @@ function getReleaseBranches() {
     .map(Function.prototype.call, String.prototype.trim);
 }
 
-function getPreviousReleaseBranch(releaseBranch) {
-  var releaseBranches = getReleaseBranches();
-  var index = releaseBranches.indexOf(releaseBranch);
+/**
+ * Checks if the user has provided a release branch override. If they
+ * have not, returns the latest release branch.
+ */
+function getCurrentReleaseBranch(releaseBranches) {
+  var releaseIndex = process.argv.indexOf('-r');
+  var releaseBranch =
+    releaseIndex > -1
+      ? 'origin/release/v' + process.argv[releaseIndex + 1]
+      : releaseBranches[0];
+  validateReleaseBranch(releaseBranch);
+  return releaseBranch;
+}
+
+function getPreviousReleaseBranch(curReleaseBranch, releaseBranches) {
+  var index = releaseBranches.indexOf(curReleaseBranch);
   if (index != -1 && index + 1 < releaseBranches.length) {
     return releaseBranches[index + 1];
   } else {
@@ -101,6 +100,8 @@ function validateReleaseBranch(releaseBranch) {
  * new changes.
  */
 function getNewChangeLogBranch(releaseBranch) {
+  var changeLogBranch =
+    CHANGE_LOG_BRANCH + releaseBranch.replace('origin/release/v', '');
   var command = util.format(
     "git checkout $(git show-ref --verify --quiet refs/heads/%s || echo '-b') %s",
     changeLogBranch,
@@ -111,8 +112,6 @@ function getNewChangeLogBranch(releaseBranch) {
     console.log('Generating change log branch.');
     console.log(command);
   }
-  var changeLogBranch =
-    CHANGE_LOG_BRANCH + releaseBranch.replace('origin/release/v', '');
   shell.exec(command);
 }
 
@@ -320,8 +319,12 @@ function writeAdditionalInfo() {
 console.log("Starting script 'change-log-generator'\n");
 
 let ADD_VERBOSE_LOGGING = process.argv.indexOf('-v') > -1 ? true : false;
-var releaseBranch = getReleaseBranch();
-var previousBranch = getPreviousReleaseBranch(releaseBranch);
+var allReleaseBranches = getReleaseBranches();
+var releaseBranch = getCurrentReleaseBranch(allReleaseBranches);
+var previousBranch = getPreviousReleaseBranch(
+  releaseBranch,
+  allReleaseBranches
+);
 console.log(
   util.format(
     'Using Release Branch: %s and Previous Release Branch: %s\n',
