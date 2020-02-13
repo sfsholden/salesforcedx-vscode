@@ -71,6 +71,17 @@ function getReleaseBranches() {
     .map(Function.prototype.call, String.prototype.trim);
 }
 
+function getPreviousReleaseBranch(releaseBranch) {
+    var releaseBranches = getReleaseBranches();
+    var index = releaseBranches.indexOf(releaseBranch);
+    if (index != -1 && index + 1 < releaseBranches.length) {
+      return releaseBranches[index + 1];
+    } else {
+      console.log('Unable to retrieve previous release. Exiting.');
+      process.exit(-1);
+    }
+  }
+
 function validateReleaseBranch(releaseBranch) {
   if (!(releaseBranch && RELEASE_REGEX.exec(releaseBranch))) {
     console.log(
@@ -103,13 +114,14 @@ function getNewChangeLogBranch(releaseBranch) {
  * the two branches. Therefore, we are guaranteed to get all new
  * commits relevant only to the new branch.
  */
-function getCommits(releaseBranch) {
+function getCommits(releaseBranch, previousBranch) {
   if (ADD_VERBOSE_LOGGING) console.log('\nCommits:');
   var commits = shell
     .exec(
       util.format(
-        'git log --no-merges --oneline %s ^origin/master',
-        releaseBranch
+        'git log --cherry-pick --oneline %s...%s',
+        releaseBranch,
+        previousBranch
       ),
       {
         silent: !ADD_VERBOSE_LOGGING
@@ -302,7 +314,8 @@ console.log("Starting script 'change-log-generator'\n");
 
 let ADD_VERBOSE_LOGGING = process.argv.indexOf('-v') > -1 ? true : false;
 var releaseBranch = getReleaseBranch();
-console.log(util.format('Using Release Branch: %s\n', releaseBranch));
+var previousBranch = getPreviousReleaseBranch(releaseBranch);
+console.log(util.format('Using Release Branch: %s and Previous Release Branch: %s\n', releaseBranch, previousBranch));
 getNewChangeLogBranch(releaseBranch);
 
 var parsedCommits = parseCommits(getCommits(releaseBranch));
