@@ -63,7 +63,7 @@ function getReleaseBranch() {
  */
 function getReleaseBranches() {
   return shell
-    .exec("git branch -r -l -s='-creatordate' 'origin/release/v*'", {
+    .exec("git branch -r -l --sort='-creatordate' 'origin/release/v*'", {
       silent: true
     })
     .replace(/\n/g, ',')
