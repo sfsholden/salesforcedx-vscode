@@ -268,7 +268,7 @@ function getChangeLogHeader(releaseBranch) {
       releaseBranchNum
     );
   } else {
-    return 'Additional Entry to Review:\n';
+    return 'Additional Entry to Review for ' + releaseBranchNum + ':\n';
   }
 }
 
