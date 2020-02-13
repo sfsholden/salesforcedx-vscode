@@ -62,6 +62,10 @@ function getReleaseBranch() {
  * creation date. This ensures that the first entry is the latest branch.
  */
 function getReleaseBranches() {
+  if (ADD_VERBOSE_LOGGING) {
+    console.log('Retrieving release branches.');
+    console.log("git branch -r -l --sort='-creatordate' 'origin/release/v*'");
+  }
   return shell
     .exec("git branch -r -l --sort='-creatordate' 'origin/release/v*'", {
       silent: !ADD_VERBOSE_LOGGING
@@ -72,15 +76,15 @@ function getReleaseBranches() {
 }
 
 function getPreviousReleaseBranch(releaseBranch) {
-    var releaseBranches = getReleaseBranches();
-    var index = releaseBranches.indexOf(releaseBranch);
-    if (index != -1 && index + 1 < releaseBranches.length) {
-      return releaseBranches[index + 1];
-    } else {
-      console.log('Unable to retrieve previous release. Exiting.');
-      process.exit(-1);
-    }
+  var releaseBranches = getReleaseBranches();
+  var index = releaseBranches.indexOf(releaseBranch);
+  if (index != -1 && index + 1 < releaseBranches.length) {
+    return releaseBranches[index + 1];
+  } else {
+    console.log('Unable to retrieve previous release. Exiting.');
+    process.exit(-1);
   }
+}
 
 function validateReleaseBranch(releaseBranch) {
   if (!(releaseBranch && RELEASE_REGEX.exec(releaseBranch))) {
@@ -97,16 +101,19 @@ function validateReleaseBranch(releaseBranch) {
  * new changes.
  */
 function getNewChangeLogBranch(releaseBranch) {
+  var command = util.format(
+    "git checkout $(git show-ref --verify --quiet refs/heads/%s || echo '-b') %s",
+    changeLogBranch,
+    changeLogBranch,
+    releaseBranch
+  );
+  if (ADD_VERBOSE_LOGGING) {
+    console.log('Generating change log branch.');
+    console.log(command);
+  }
   var changeLogBranch =
     CHANGE_LOG_BRANCH + releaseBranch.replace('origin/release/v', '');
-  shell.exec(
-    util.format(
-      "git checkout $(git show-ref --verify --quiet refs/heads/%s || echo '-b') %s",
-      changeLogBranch,
-      changeLogBranch,
-      releaseBranch
-    )
-  );
+  shell.exec(command);
 }
 
 /**
@@ -315,7 +322,13 @@ console.log("Starting script 'change-log-generator'\n");
 let ADD_VERBOSE_LOGGING = process.argv.indexOf('-v') > -1 ? true : false;
 var releaseBranch = getReleaseBranch();
 var previousBranch = getPreviousReleaseBranch(releaseBranch);
-console.log(util.format('Using Release Branch: %s and Previous Release Branch: %s\n', releaseBranch, previousBranch));
+console.log(
+  util.format(
+    'Using Release Branch: %s and Previous Release Branch: %s\n',
+    releaseBranch,
+    previousBranch
+  )
+);
 getNewChangeLogBranch(releaseBranch);
 
 var parsedCommits = parseCommits(getCommits(releaseBranch));
