@@ -107,7 +107,10 @@ function getCommits(releaseBranch) {
   if (ADD_VERBOSE_LOGGING) console.log('\nCommits:');
   var commits = shell
     .exec(
-      util.format('git log --cherry-pick --oneline %s...master', releaseBranch),
+      util.format(
+        'git log --cherry-pick --oneline %s...origin/master',
+        releaseBranch
+      ),
       {
         silent: !ADD_VERBOSE_LOGGING
       }
