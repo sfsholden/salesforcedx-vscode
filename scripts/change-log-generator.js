@@ -32,7 +32,7 @@ const CHANGE_LOG_PATH = path.join(
 const CHANGE_LOG_BRANCH = 'changeLog-v';
 
 // Commit Map Keys
-const PR_NUM = 'PR NUM';
+const PR_NUM = 'PR_NUM';
 const COMMIT = 'COMMIT';
 const MESSAGE = 'MESSAGE';
 const FILES_CHANGED = 'FILES_CHANGED';
