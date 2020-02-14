@@ -258,6 +258,10 @@ function getChangeLogText(releaseBranch, groupedMessages) {
       changeLogText += message;
     });
   });
+  if (ADD_VERBOSE_LOGGING) {
+    console.log('\nChangeLog Results:');
+    console.log(changeLogText);
+  }
   return changeLogText + '\n';
 }
 
@@ -281,11 +285,11 @@ function openPRForChanges(releaseBranch) {
     releaseBranch,
     changeLogBranch
   );
-  console.log(commitCommand);
+  console.log('\n' + commitCommand);
   shell.exec(commitCommand);
-  console.log(pushCommand);
-  shell.exec(pushCommand);
-  console.log(pr);
+  console.log('\n' + pushCommand);
+  shell.exec(pushCommand).silent(true);
+  console.log('\n' + pr);
   shell.exec(pr);
 }
 
