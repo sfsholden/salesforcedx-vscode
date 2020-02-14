@@ -288,7 +288,7 @@ function openPRForChanges(releaseBranch) {
   console.log('\n' + commitCommand);
   shell.exec(commitCommand);
   console.log('\n' + pushCommand);
-  shell.exec(pushCommand).silent(true);
+  shell.exec(pushCommand, { silent: true });
   console.log('\n' + pr);
   shell.exec(pr);
 }
