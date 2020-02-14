@@ -273,20 +273,20 @@ function writeChangeLog(textToInsert) {
 function openPRForChanges(releaseBranch) {
   var changeLogBranch =
     CHANGE_LOG_BRANCH + releaseBranch.replace('origin/release/v', '');
-  console.log(
-    'git commit -a -m "Auto-Generated CHANGELOG for "' + releaseBranch
+  var commitCommand =
+    'git commit -a -m "Auto-Generated CHANGELOG for "' + releaseBranch;
+  var pushCommand = 'git push origin ' + changeLogBranch;
+  var pr = util.format(
+    'git request-pull %s origin %s',
+    releaseBranch,
+    changeLogBranch
   );
-  shell.exec(
-    'git commit -a -m "Auto-Generated CHANGELOG for "' + releaseBranch
-  );
-  console.log('git push origin ' + changeLogBranch);
-  shell.exec('git push origin ' + changeLogBranch);
-  console.log(
-    util.format('git request-pull %s origin %s', changeLogBranch, releaseBranch)
-  );
-  shell.exec(
-    util.format('git request-pull %s origin %s', changeLogBranch, releaseBranch)
-  );
+  console.log(commitCommand);
+  shell.exec(commitCommand);
+  console.log(pushCommand);
+  shell.exec(pushCommand);
+  console.log(pr);
+  shell.exec(pr);
 }
 
 function writeAdditionalInfo() {
