@@ -1,3 +1,31 @@
+# 48.1.0 - (INSERT RELEASE DATE [Month Day, Year])
+
+## Fixed
+MOVE ENTRIES FROM BELOW
+
+## Added
+MOVE ENTRIES FROM BELOW
+
+#### salesforcedx-vscode-apex
+
+- Improve Apex completions, add System class documentation ([PR #1966](https://github.com/forcedotcom/salesforcedx-vscode/pull/1966))
+
+#### salesforcedx-vscode-core
+
+- Fix scratch org create command not allowing empty string during input ([PR #1953](https://github.com/forcedotcom/salesforcedx-vscode/pull/1953))
+
+#### docs
+
+- Bls/update aura tools ([PR #1917](https://github.com/forcedotcom/salesforcedx-vscode/pull/1917))
+
+#### salesforcedx-vscode
+
+- Fix size of the vsix for the extension pack ([PR #1936](https://github.com/forcedotcom/salesforcedx-vscode/pull/1936))
+
+#### salesforcedx-vscode-lwc
+
+- Testing Support for LWC: Add more automation coverage ([PR #1808](https://github.com/forcedotcom/salesforcedx-vscode/pull/1808))
+
 # 47.17.1 - January 30, 2020
 
 ## Fixed
