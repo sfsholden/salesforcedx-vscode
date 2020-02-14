@@ -273,10 +273,17 @@ function writeChangeLog(textToInsert) {
 function openPRForChanges(releaseBranch) {
   var changeLogBranch =
     CHANGE_LOG_BRANCH + releaseBranch.replace('origin/release/v', '');
+  console.log(
+    'git commit -a -m "Auto-Generated CHANGELOG for "' + releaseBranch
+  );
   shell.exec(
     'git commit -a -m "Auto-Generated CHANGELOG for "' + releaseBranch
   );
+  console.log('git push origin ' + changeLogBranch);
   shell.exec('git push origin ' + changeLogBranch);
+  console.log(
+    util.format('git request-pull %s origin %s', changeLogBranch, releaseBranch)
+  );
   shell.exec(
     util.format('git request-pull %s origin %s', changeLogBranch, releaseBranch)
   );
