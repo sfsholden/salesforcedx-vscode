@@ -103,7 +103,7 @@ function getNewChangeLogBranch(releaseBranch) {
   var changeLogBranch =
     CHANGE_LOG_BRANCH + releaseBranch.replace('origin/release/v', '');
   var command = util.format(
-    "git checkout $(git show-ref --verify --quiet refs/heads/%s || echo '-b') %s",
+    "git checkout $(git show-ref --verify --quiet refs/heads/%s || echo '-b') %s %s",
     changeLogBranch,
     changeLogBranch,
     releaseBranch
