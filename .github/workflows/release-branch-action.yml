@@ -1,4 +1,4 @@
-name: Release Branch Listener for Generating Change Logs
+name: Release Branch Listener
 
 on:
   push:
@@ -25,11 +25,16 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install Packages
-        run: npm install
+      #- name: Install Packages
+      #  run: npm install
 
-      - name: Run Compile
-        run: npm run compile
+      #- name: Run Compile
+      #  run: npm run compile
+
+      - name: Testing
+        run: echo "${GITHUB_REF##*/}"
+      - run: echo "${GITHUB_REF##*/release}"
+      - run: echo "${GITHUB_REF##*/release/v}"
 
       - name: Build the CHANGELOG
-        run: node scripts/change-log-generator.js
+        run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/release/v}
