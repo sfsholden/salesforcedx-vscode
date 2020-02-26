@@ -1,6 +1,6 @@
 # Salesforce Extensions for VS Code
 
-Some new stuff
+And another.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ek3pftmawcabebac/branch/develop?svg=true)](https://ci.appveyor.com/project/forcedotcom/salesforcedx-vscode/branch/develop)
 [![CircleCI](https://circleci.com/gh/forcedotcom/salesforcedx-vscode.svg?style=svg)](https://circleci.com/gh/forcedotcom/salesforcedx-vscode)
