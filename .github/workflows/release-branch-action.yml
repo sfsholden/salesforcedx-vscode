@@ -28,13 +28,5 @@ jobs:
       - name: Install Shelljs
         run: npm install -g shelljs
 
-      - name: Testing
-        run: echo "${GITHUB_REF##*/}"
-        
-      - name: Testing2
-        run: echo "${GITHUB_REF##*/v}"
-        
-      - name: Testing3
-        run: echo "${GITHUB_REF##*v/}"
-      #- name: Build the CHANGELOG
-        #run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/}
+      - name: Build the CHANGELOG
+        run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/release/v}
