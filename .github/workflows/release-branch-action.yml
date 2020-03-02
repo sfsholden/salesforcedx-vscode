@@ -25,16 +25,17 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      #- name: Install Packages
-      #  run: npm install
-
-      #- name: Run Compile
-      #  run: npm run compile
+      - name: Install Shelljs
+        run: npm install -g shelljs
 
       - name: Testing
         run: echo "${GITHUB_REF##*/}"
-      - run: echo "${GITHUB_REF##*/release}"
-      - run: echo "${GITHUB_REF##*/release/v}"
+        
+      - name: Testing2
+        run: echo "${GITHUB_REF##*/v}"
+        
+      - name: Testing3
+        run: echo "${GITHUB_REF##*v/}"
 
       - name: Build the CHANGELOG
-        run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/release/v}
+        #run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/}
