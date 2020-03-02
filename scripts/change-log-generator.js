@@ -59,12 +59,15 @@ function getCurrentReleaseBranch(releaseBranches) {
 
 function getPreviousReleaseBranch(curReleaseBranch, releaseBranches) {
   var index = releaseBranches.indexOf(curReleaseBranch);
+  var previousReleaseBranch = '';
   if (index != -1 && index + 1 < releaseBranches.length) {
-    return releaseBranches[index + 1];
-  } else {
+    previousReleaseBranch = releaseBranches[index + 1];
+  }
+  if (!previousReleaseBranch) {
     console.log('Unable to retrieve previous release. Exiting.');
     process.exit(-1);
   }
+  return previousReleaseBranch;
 }
 
 function validateReleaseBranch(releaseBranch) {
@@ -86,7 +89,6 @@ function getNewChangeLogBranch(releaseBranch) {
   if (ADD_VERBOSE_LOGGING) {
     console.log('Generating change log branch.');
   }
-  shell.exec(`git fetch upstream ${releaseBranch}`);
   shell.exec(
     `git checkout $(git show-ref --verify --quiet refs/heads/${changeLogBranch} || echo '-b') ${changeLogBranch} ${releaseBranch}`
   );
