@@ -36,6 +36,5 @@ jobs:
         
       - name: Testing3
         run: echo "${GITHUB_REF##*v/}"
-
-      - name: Build the CHANGELOG
+      #- name: Build the CHANGELOG
         #run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/}
