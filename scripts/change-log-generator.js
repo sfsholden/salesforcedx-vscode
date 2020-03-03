@@ -31,7 +31,6 @@ function getReleaseBranches() {
   if (ADD_VERBOSE_LOGGING) {
     console.log('Retrieving release branches.');
   }
-  shell.exec(`git branch -r -l --sort='-creatordate'`);
   return shell
     .exec(
       `git branch -r -l --sort='-creatordate' '${
