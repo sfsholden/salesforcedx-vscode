@@ -48,6 +48,7 @@ function getReleaseBranches() {
  * have not, returns the latest release branch.
  */
 function getCurrentReleaseBranch(releaseBranches) {
+  if (ADD_VERBOSE_LOGGING) console.log('Retrieving current release branch.');
   var releaseIndex = process.argv.indexOf('-r');
   var releaseBranch =
     releaseIndex > -1
@@ -58,6 +59,7 @@ function getCurrentReleaseBranch(releaseBranches) {
 }
 
 function getPreviousReleaseBranch(curReleaseBranch, releaseBranches) {
+  if (ADD_VERBOSE_LOGGING) console.log('Retrieving previous release branch.');
   var index = releaseBranches.indexOf(curReleaseBranch);
   var previousReleaseBranch = '';
   if (index != -1 && index + 1 < releaseBranches.length) {
@@ -155,11 +157,7 @@ var previousBranch = getPreviousReleaseBranch(
   allReleaseBranches
 );
 console.log(
-  util.format(
-    'Current Release Branch: %s\nPrevious Release Branch: %s\n',
-    releaseBranch,
-    previousBranch
-  )
+  `Current Release Branch: ${releaseBranch}\nPrevious Release Branch: ${previousBranch}\n'`
 );
 getNewChangeLogBranch(releaseBranch);
 writeChangeLog(
