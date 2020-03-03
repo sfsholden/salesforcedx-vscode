@@ -147,9 +147,11 @@ function getChangeLogBranch(releaseBranch) {
 
 console.log("Starting script 'change-log-generator'\n");
 
+/*
 if (process.argv.indexOf('-v') > -1) {
   shell.set('-v'); //Print command executions
 }
+*/
 
 let ADD_VERBOSE_LOGGING = process.argv.indexOf('-v') > -1 ? true : false;
 var allReleaseBranches = getReleaseBranches();
