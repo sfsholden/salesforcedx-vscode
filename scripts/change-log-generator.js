@@ -31,7 +31,7 @@ function getReleaseBranches() {
   if (ADD_VERBOSE_LOGGING) {
     console.log('Retrieving release branches.');
   }
-  return shell
+  var results = shell
     .exec(
       `git branch -r -l --sort='-creatordate' '${
         constants.RELEASE_BRANCH_PREFIX
@@ -41,6 +41,8 @@ function getReleaseBranches() {
     .replace(/\n/g, ',')
     .split(',')
     .map(Function.prototype.call, String.prototype.trim);
+  console.log('Is it hung in the process?');
+  return results;
 }
 
 /**
@@ -48,6 +50,7 @@ function getReleaseBranches() {
  * have not, returns the latest release branch.
  */
 function getCurrentReleaseBranch(releaseBranches) {
+  if (ADD_VERBOSE_LOGGING) console.log('Retrieving current release branch.');
   var releaseIndex = process.argv.indexOf('-r');
   var releaseBranch =
     releaseIndex > -1
@@ -58,6 +61,7 @@ function getCurrentReleaseBranch(releaseBranches) {
 }
 
 function getPreviousReleaseBranch(curReleaseBranch, releaseBranches) {
+  if (ADD_VERBOSE_LOGGING) console.log('Retrieving previous release branch.');
   var index = releaseBranches.indexOf(curReleaseBranch);
   var previousReleaseBranch = '';
   if (index != -1 && index + 1 < releaseBranches.length) {
@@ -107,7 +111,7 @@ function writeChangeLog(textToInsert) {
   fs.closeSync(fd);
 }
 
-function openPRForChanges(releaseBranch) {
+function pushChanges(releaseBranch) {
   var changeLogBranch = getChangeLogBranch(releaseBranch);
   var commitCommand =
     'git commit -a -m "Auto-Generated CHANGELOG for "' + releaseBranch;
@@ -149,21 +153,18 @@ if (process.argv.indexOf('-v') > -1) {
 
 let ADD_VERBOSE_LOGGING = process.argv.indexOf('-v') > -1 ? true : false;
 var allReleaseBranches = getReleaseBranches();
+console.log('Did it get here?');
 var releaseBranch = getCurrentReleaseBranch(allReleaseBranches);
 var previousBranch = getPreviousReleaseBranch(
   releaseBranch,
   allReleaseBranches
 );
 console.log(
-  util.format(
-    'Current Release Branch: %s\nPrevious Release Branch: %s\n',
-    releaseBranch,
-    previousBranch
-  )
+  `Current Release Branch: ${releaseBranch}\nPrevious Release Branch: ${previousBranch}\n`
 );
 getNewChangeLogBranch(releaseBranch);
 writeChangeLog(
   getChangeLogText(releaseBranch, previousBranch, ADD_VERBOSE_LOGGING)
 );
-openPRForChanges(releaseBranch);
+pushChanges(releaseBranch);
 writeAdditionalInfo();
