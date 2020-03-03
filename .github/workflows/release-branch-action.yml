@@ -23,8 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout branch history
-        run: |
-          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+        run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
