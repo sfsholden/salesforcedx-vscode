@@ -31,7 +31,7 @@ function getReleaseBranches() {
   if (ADD_VERBOSE_LOGGING) {
     console.log('Retrieving release branches.');
   }
-  return shell
+  var results = shell
     .exec(
       `git branch -r -l --sort='-creatordate' '${
         constants.RELEASE_BRANCH_PREFIX
@@ -41,6 +41,8 @@ function getReleaseBranches() {
     .replace(/\n/g, ',')
     .split(',')
     .map(Function.prototype.call, String.prototype.trim);
+  console.log('Is it hung in the process?');
+  return results;
 }
 
 /**
@@ -151,17 +153,18 @@ if (process.argv.indexOf('-v') > -1) {
 
 let ADD_VERBOSE_LOGGING = process.argv.indexOf('-v') > -1 ? true : false;
 var allReleaseBranches = getReleaseBranches();
+console.log('Did it get here?');
 var releaseBranch = getCurrentReleaseBranch(allReleaseBranches);
 var previousBranch = getPreviousReleaseBranch(
   releaseBranch,
   allReleaseBranches
 );
 console.log(
-  `Current Release Branch: ${releaseBranch}\nPrevious Release Branch: ${previousBranch}\n'`
+  `Current Release Branch: ${releaseBranch}\nPrevious Release Branch: ${previousBranch}\n`
 );
 getNewChangeLogBranch(releaseBranch);
 writeChangeLog(
   getChangeLogText(releaseBranch, previousBranch, ADD_VERBOSE_LOGGING)
 );
-openPRForChanges(releaseBranch);
+//openPRForChanges(releaseBranch);
 writeAdditionalInfo();
