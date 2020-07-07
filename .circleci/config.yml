@@ -231,7 +231,7 @@ jobs:
       - slack/notify:
           channel: 'pdt_releases'
           color: '#42e2f4'
-          message: 'TESTING - VSCode Extensions ${GUS_BUILD} have been published to the marketplace'
+          message: 'TESTING - VSCode Extensions v${GUS_BUILD} have been published to the marketplace'
 
   build-all:
     description: 'Build artifacts in a non-Windows environment'
@@ -253,35 +253,39 @@ jobs:
       - SFDX_AUTOUPDATE_DISABLE: true
       - SFDX_DOMAIN_RETRY: << pipeline.parameters.domain-retry >>
       - NODE_VERSION: << pipeline.parameters.node-version >>
+    parallelism: 4
     steps:
       - build-win
       - run:
-          name: 'Running unit tests'
-          shell: cmd.exe
-          command: npm run test:unit
-      - run:
-          name: 'Aggregate test results'
-          shell: bash.exe
           command: |
-            npm run aggregateJUnit
-            junit-merge -d junit-aggregate -o junit-aggregate.xml
-      - store_test_results:
-          path: ./junit-aggregate/
-      - run:
-          name: 'Generate code coverage'
-          shell: bash.exe
-          command: |
-            codecov --disable=gcov
-      - run:
-          name: 'Fail build for test failures'
-          shell: powershell.exe
-          command: |
-            [xml]$results = Get-Content junit-aggregate.xml
-            $failure = $results.SelectSingleNode("//failure")
-            if ($failure -ne $null) { 
-              Write-Host "Forcing build failure due to test failure(s) :'("
-              $host.SetShouldExit(1)
-            }
+            echo $(circleci tests glob "out/test/unit/**/*.js" | circleci tests split)
+      #- run:
+      #    name: 'Running unit tests'
+      #    shell: cmd.exe
+      #    command: npm run test:unit
+      #- run:
+      #    name: 'Aggregate test results'
+      #    shell: bash.exe
+      #    command: |
+      #      npm run aggregateJUnit
+      #      junit-merge -d junit-aggregate -o junit-aggregate.xml
+      #- store_test_results:
+      #    path: ./junit-aggregate/
+      #- run:
+      #    name: 'Generate code coverage'
+      #    shell: bash.exe
+      #    command: |
+      #      codecov --disable=gcov
+      #- run:
+      #    name: 'Fail build for test failures'
+      #    shell: powershell.exe
+      #    command: |
+      #      [xml]$results = Get-Content junit-aggregate.xml
+      #      $failure = $results.SelectSingleNode("//failure")
+      #      if ($failure -ne $null) {
+      #        Write-Host "Forcing build failure due to test failure(s) :'("
+      #        $host.SetShouldExit(1)
+      #      }
 
   integration-tests:
     description: 'Run tests on Windows'
@@ -364,7 +368,6 @@ jobs:
       - run:
           name: 'Create git tag (e.g. v48.1.0) & push changes back to master branch'
           command: |
-            export GUS_BUILD="$(node -pe "require('./packages/salesforcedx-vscode/package.json').version")"
             git tag v${GUS_BUILD}
             git push origin v${GUS_BUILD}
             git push origin master
@@ -395,6 +398,10 @@ jobs:
           command: |
             git branch
             scripts/create-release-branch.js
+      - slack/notify:
+          channel: 'pdt_releases'
+          color: '#42e2f4'
+          message: 'VSCode Extensions release branch has been cut'
 
 workflows:
   version: 2.1
