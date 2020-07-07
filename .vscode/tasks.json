@@ -83,8 +83,7 @@
     {
       "id": "circleCiId",
       "type": "promptString",
-      "description": "CircleCi Token",
-      "default": "bfb87305eaeac18b1bc228fb33c20d776bf5dbb6"
+      "description": "CircleCi Token"
     }
   ]
 }
