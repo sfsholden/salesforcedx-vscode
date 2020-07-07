@@ -201,8 +201,7 @@ executors:
 jobs:
   simple-sample-job:
     description: 'Just for local testing'
-    docker:
-      - image: circleci/node:<< pipeline.parameters.node-version >>
+    executor: default-executor
     steps:
       - install
       - gus-prepare-environment-variables
@@ -321,10 +320,10 @@ jobs:
       - ssh-config
       - checkout
       - restore_dependency_cache
-      - run:
-          name: 'Setup gus case management'
-          command: |
-            sudo npm install -g @salesforce/change-case-management
+      #- run:
+      #    name: 'Setup gus case management'
+      #    command: |
+      #      sudo npm install -g @salesforce/change-case-management
       #- sfchangecase/install
       - gus-prepare-environment-variables
       #- sfchangecase/create:
