@@ -15,9 +15,15 @@ orbs:
   slack: circleci/slack@3.4.2
 
 parameters:
+  cli-version:
+    type: string
+    default: '7.45.1'
   node-version:
     type: string
     default: '12.4.0'
+  lerna-version:
+    type: string
+    default: '3.13.1'
   domain-retry:
     description: 'SFDX Domain Retry Wait in Seconds'
     type: integer
@@ -25,6 +31,9 @@ parameters:
   fingerprint:
     type: string
     default: '3b:68:69:7d:19:a4:50:69:ad:b8:db:57:f9:9c:f0:3f'
+  publish:
+    type: boolean
+    default: false
 
 commands:
   compile:
@@ -190,7 +199,7 @@ commands:
           command: |
             npm config set scripts-prepend-node-path true
             npm install
-            npm install -g sfdx-cli@7.45.1
+            npm install -g sfdx-cli@<< pipeline.parameters.cli-version >>
             npm install -g codecov
             npm install -g junit-merge
       - run:
@@ -220,15 +229,6 @@ executors:
     working_directory: << parameters.working-dir >>
 
 jobs:
-  simple-sample-job:
-    description: 'Just for local testing'
-    executor: default-executor
-    steps:
-      - ssh-config
-      - checkout
-      - restore_dependency_cache
-      - gus-prepare-environment-variables
-
   build-all:
     description: 'Build artifacts in a non-Windows environment'
     executor:
@@ -249,39 +249,35 @@ jobs:
       - SFDX_AUTOUPDATE_DISABLE: true
       - SFDX_DOMAIN_RETRY: << pipeline.parameters.domain-retry >>
       - NODE_VERSION: << pipeline.parameters.node-version >>
-    parallelism: 4
     steps:
       - build-win
       - run:
+          name: 'Running unit tests'
+          shell: cmd.exe
+          command: npm run test:unit
+      - run:
+          name: 'Aggregate test results'
+          shell: bash.exe
           command: |
-            echo "Tests were $(circleci tests glob 'out/test/unit/**/*.js')"
-      #- run:
-      #    name: 'Running unit tests'
-      #    shell: cmd.exe
-      #    command: npm run test:unit $(circleci tests glob "out/test/unit/**/*.js" | circleci tests split)
-      #- run:
-      #    name: 'Aggregate test results'
-      #    shell: bash.exe
-      #    command: |
-      #      npm run aggregateJUnit
-      #      junit-merge -d junit-aggregate -o junit-aggregate.xml
-      #- store_test_results:
-      #    path: ./junit-aggregate/
-      #- run:
-      #    name: 'Generate code coverage'
-      #    shell: bash.exe
-      #    command: |
-      #      codecov --disable=gcov
-      #- run:
-      #    name: 'Fail build for test failures'
-      #    shell: powershell.exe
-      #    command: |
-      #      [xml]$results = Get-Content junit-aggregate.xml
-      #      $failure = $results.SelectSingleNode("//failure")
-      #      if ($failure -ne $null) {
-      #        Write-Host "Forcing build failure due to test failure(s) :'("
-      #        $host.SetShouldExit(1)
-      #      }
+            npm run aggregateJUnit
+            junit-merge -d junit-aggregate -o junit-aggregate.xml
+      - store_test_results:
+          path: ./junit-aggregate/
+      - run:
+          name: 'Generate code coverage'
+          shell: bash.exe
+          command: |
+            codecov --disable=gcov
+      - run:
+          name: 'Fail build for test failures'
+          shell: powershell.exe
+          command: |
+            [xml]$results = Get-Content junit-aggregate.xml
+            $failure = $results.SelectSingleNode("//failure")
+            if ($failure -ne $null) {
+              Write-Host "Forcing build failure due to test failure(s) :'("
+              $host.SetShouldExit(1)
+            }
 
   integration-tests:
     description: 'Run tests on Windows'
@@ -337,6 +333,10 @@ jobs:
         type: executor
     executor: << parameters.e >>
     steps:
+      - slack/notify:
+          channel: 'pdt_releases'
+          color: '#FFDEAD'
+          message: 'TESTING - Starting release for VSCode Extensions'
       - ssh-config
       - checkout
       - restore_dependency_cache
@@ -356,24 +356,24 @@ jobs:
       - install
       - compile
       - package-extensions
-      - updating-sha-for-publish
-      - run:
-          name: 'Publishing to the VS Code Marketplace.'
-          command: npm run vscode:publish
-      - stage-and-store-artifacts
-      - run:
-          name: 'Create git tag (e.g. v48.1.0) & push changes back to master branch'
-          command: |
-            git tag v${GUS_BUILD}
-            git push origin v${GUS_BUILD}
-            git push origin master
+      #- updating-sha-for-publish
+      #- run:
+      #    name: 'Publishing to the VS Code Marketplace.'
+      #    command: npm run vscode:publish
+      #- stage-and-store-artifacts
+      #- run:
+      #    name: 'Create git tag (e.g. v48.1.0) & push changes back to master branch'
+      #    command: |
+      #      git tag v${GUS_BUILD}
+      #      git push origin v${GUS_BUILD}
+      #      git push origin master
       #- sfchangecase/update:
       #    location: REPO_LOCATION
       #    release: GUS_RELEASE
-      #- slack/notify:
-      #    channel: 'pdt_releases'
-      #    color: '#42e2f4'
-      #    message: 'VSCode Extensions v${GUS_BUILD} have been published to the marketplace'
+      - slack/notify:
+          channel: 'pdt_releases'
+          color: '#9bcd9b'
+          message: 'TESTING - VSCode Extensions v${GUS_BUILD} have been published to the marketplace'
 
   create-release-branch:
     parameters:
@@ -381,6 +381,10 @@ jobs:
         type: executor
     executor: << parameters.e >>
     steps:
+      - slack/notify:
+          channel: 'pdt_releases'
+          color: '#FFDEAD'
+          message: 'Starting creation of release branch for VSCode Extensions'
       - ssh-config
       - checkout
       - restore_dependency_cache
@@ -388,7 +392,7 @@ jobs:
       - install
       - run:
           name: Install Lerna
-          command: sudo npm install -g lerna@3.13.1
+          command: sudo npm install -g lerna@<< pipeline.parameters.lerna-version >>
       - run:
           name: Create release branch
           command: |
@@ -396,29 +400,39 @@ jobs:
             scripts/create-release-branch.js
       - slack/notify:
           channel: 'pdt_releases'
-          color: '#42e2f4'
+          color: '#d8bfd8'
           message: 'VSCode Extensions release branch has been cut'
+
+  # TODO - merge branch job
 
 workflows:
   version: 2.1
 
   # run a build and a windows test on every commit
   commit-workflow:
+    unless: << pipeline.parameters.publish >>
     jobs:
-      #- build-all
+      - build-all
       - unit-tests
-      # - integration-tests
-      #- simple-sample-job
-      #- publish:
-      #e: default-executor
-      #filters:
-      #branches:
-      #  only:
-      #    - master
-      #requires:
-      # - build-all
-      #- unit-tests
-      # - integration-tests
+      - integration-tests
+
+  publish-workflow:
+    when: << pipeline.parameters.publish >>
+    jobs:
+      - build-all
+      - unit-tests
+      - integration-tests
+      - publish:
+          e: default-executor
+          type: approval
+          requires:
+            - build-all
+            - unit-tests
+            - integration-tests
+          filters:
+            branches:
+              only:
+                - master
 
   # run a build/test every mid-night
   scheduled-workflow:

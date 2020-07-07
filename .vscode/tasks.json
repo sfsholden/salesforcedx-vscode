@@ -60,6 +60,12 @@
       "isBackground": false
     },
     {
+      "label": "Publish Extensions",
+      "command": "./scripts/publish-command.sh",
+      "type": "shell",
+      "args": ["${input:circleCiId}"]
+    },
+    {
       "label": "Watch",
       "command": "npm",
       "type": "shell",
@@ -71,6 +77,14 @@
       "args": ["run", "watch"],
       "isBackground": true,
       "problemMatcher": "$tsc-watch"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "circleCiId",
+      "type": "promptString",
+      "description": "CircleCi Token",
+      "default": "bfb87305eaeac18b1bc228fb33c20d776bf5dbb6"
     }
   ]
 }
