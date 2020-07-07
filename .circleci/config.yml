@@ -254,11 +254,11 @@ jobs:
       - build-win
       - run:
           command: |
-            echo $(circleci tests glob "out/test/unit/**/*.js")
+            echo "Tests were $(circleci tests glob 'out/test/unit/**/*.js')"
       #- run:
       #    name: 'Running unit tests'
       #    shell: cmd.exe
-      #    command: npm run test:unit
+      #    command: npm run test:unit $(circleci tests glob "out/test/unit/**/*.js" | circleci tests split)
       #- run:
       #    name: 'Aggregate test results'
       #    shell: bash.exe
@@ -405,20 +405,20 @@ workflows:
   # run a build and a windows test on every commit
   commit-workflow:
     jobs:
-      - build-all
+      #- build-all
       - unit-tests
       # - integration-tests
-      - simple-sample-job
-      - publish:
-          e: default-executor
-          filters:
-            branches:
-              only:
-                - master
-          requires:
-            - build-all
-            - unit-tests
-            # - integration-tests
+      #- simple-sample-job
+      #- publish:
+      #e: default-executor
+      #filters:
+      #branches:
+      #  only:
+      #    - master
+      #requires:
+      # - build-all
+      #- unit-tests
+      # - integration-tests
 
   # run a build/test every mid-night
   scheduled-workflow:
