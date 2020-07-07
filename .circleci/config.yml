@@ -203,8 +203,11 @@ jobs:
     description: 'Just for local testing'
     executor: default-executor
     steps:
-      - install
+      - ssh-config
+      - checkout
+      - restore_dependency_cache
       - gus-prepare-environment-variables
+      - install
       - slack/notify:
           channel: 'pdt_releases'
           color: '#42e2f4'
