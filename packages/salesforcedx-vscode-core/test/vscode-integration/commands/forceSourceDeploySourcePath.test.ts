@@ -7,9 +7,7 @@
 
 import { expect } from 'chai';
 import * as path from 'path';
-
 import { ForceSourceDeploySourcePathExecutor } from '../../../src/commands/forceSourceDeploySourcePath';
-
 import { nls } from '../../../src/messages';
 
 describe('Force Source Deploy Using Sourcepath Option', () => {

@@ -3,7 +3,7 @@ import { activate } from '../../../src/index';
 import * as vscode from 'vscode';
 import sinon, { stubInterface, stubObject } from 'ts-sinon';
 import * as sinonChai from 'sinon-chai';
-import { shared as lspCommon } from 'lightning-lsp-common';
+import { shared as lspCommon } from '@salesforce/lightning-lsp-common';
 
 chai.use(sinonChai);
 const { expect, assert } = chai;
@@ -19,6 +19,10 @@ describe('activation modes', () => {
     mockContext = stubInterface<vscode.ExtensionContext>();
     // @ts-ignore
     mockContext.subscriptions = [];
+    // @ts-ignore
+    mockContext.asAbsolutePath = path => {
+      return path;
+    };
   });
 
   afterEach(function() {

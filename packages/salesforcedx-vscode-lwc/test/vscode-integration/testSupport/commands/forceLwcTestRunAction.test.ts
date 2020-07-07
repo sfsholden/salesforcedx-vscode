@@ -13,7 +13,7 @@ import {
   forceLwcTestRun,
   forceLwcTestRunActiveTextEditorTest
 } from '../../../../src/testSupport/commands/forceLwcTestRunAction';
-import { getLwcTestRunnerExecutable } from '../../../../src/testSupport/testRunner';
+import { getLwcTestRunnerExecutable } from '../../../../src/testSupport/workspace';
 import { FORCE_LWC_TEST_RUN_LOG_NAME } from '../../../../src/testSupport/types/constants';
 import {
   createMockTestFileInfo,
@@ -26,11 +26,18 @@ import {
   unmockSfdxTaskExecute,
   unmockTestResultWatcher
 } from '../mocks';
+import { InputBuffer } from 'uuid/interfaces';
 
 describe('Force LWC Test Run - Code Action', () => {
   describe('Telemetry for running tests', () => {
-    let telemetryStub: SinonStub;
-    let processHrtimeStub: SinonStub;
+    let telemetryStub: SinonStub<
+      [(string | undefined)?, ([number, number] | undefined)?, any?, any?],
+      Promise<void>
+    >;
+    let processHrtimeStub: SinonStub<
+      [([number, number] | undefined)?],
+      [number, number]
+    >;
     beforeEach(() => {
       telemetryStub = stub(telemetryService, 'sendCommandEvent');
       telemetryStub.returns(Promise.resolve());
@@ -48,14 +55,17 @@ describe('Force LWC Test Run - Code Action', () => {
 
     it('Should send telemetry for running tests', async () => {
       const testExecutionInfo = createMockTestFileInfo();
-      const mockExecutionTime = [123, 456];
+      const mockExecutionTime: [number, number] = [123, 456];
       processHrtimeStub.returns(mockExecutionTime);
       await forceLwcTestRun(testExecutionInfo);
       assert.calledOnce(telemetryStub);
       assert.calledWith(
         telemetryStub,
         FORCE_LWC_TEST_RUN_LOG_NAME,
-        mockExecutionTime
+        mockExecutionTime,
+        {
+          workspaceType: 'SFDX'
+        }
       );
 
       processHrtimeStub.restore();
@@ -63,8 +73,14 @@ describe('Force LWC Test Run - Code Action', () => {
   });
 
   describe('Run Test File', () => {
-    let uuidStub: SinonStub;
-    let executeTaskStub: SinonStub;
+    let uuidStub: SinonStub<
+      [({ random: InputBuffer } | { rng(): InputBuffer } | undefined)?],
+      string
+    >;
+    let executeTaskStub: SinonStub<
+      [vscode.Task],
+      Thenable<vscode.TaskExecution | void>
+    >;
     const mockUuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
     beforeEach(() => {
       mockGetLwcTestRunnerExecutable();
@@ -87,6 +103,12 @@ describe('Force LWC Test Run - Code Action', () => {
       await forceLwcTestRunActiveTextEditorTest();
 
       const expectedCwd = vscode.workspace.workspaceFolders![0].uri.fsPath;
+      const expectedOptions = /^win32/.test(process.platform)
+        ? {
+            executable: 'cmd.exe',
+            shellArgs: ['/d', '/c']
+          }
+        : undefined;
       const lwcTestRunnerExecutable = getLwcTestRunnerExecutable(expectedCwd);
       assert.calledOnce(executeTaskStub);
       assert.calledWith(
@@ -119,7 +141,7 @@ describe('Force LWC Test Run - Code Action', () => {
       );
       assert.calledWith(
         executeTaskStub,
-        match.has('execution', match.has('options', undefined))
+        match.has('execution', match.has('options', expectedOptions))
       );
       unmockActiveTextEditorUri();
     });

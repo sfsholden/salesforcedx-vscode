@@ -5,11 +5,9 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { shared as lspCommon } from 'lightning-lsp-common';
-import { WorkspaceType } from 'lightning-lsp-common/lib/shared';
+import { shared as lspCommon } from '@salesforce/lightning-lsp-common';
 import * as path from 'path';
 import {
-  commands,
   ExtensionContext,
   ProgressLocation,
   Uri,
@@ -22,11 +20,8 @@ import {
   ServerOptions,
   TransportKind
 } from 'vscode-languageclient';
-import { sync as which } from 'which';
-import { createQuickOpenCommand } from './commands/quickpick/quickpick';
 import { nls } from './messages';
 import { telemetryService } from './telemetry';
-import { ComponentTreeProvider } from './views/component-tree-provider';
 
 // See https://github.com/Microsoft/vscode-languageserver-node/issues/105
 export function code2ProtocolConverter(value: Uri): string {
@@ -92,7 +87,13 @@ export async function activate(context: ExtensionContext) {
 
   // Setup the language server
   const serverModule = context.asAbsolutePath(
-    path.join('node_modules', 'aura-language-server', 'lib', 'server.js')
+    path.join(
+      'node_modules',
+      '@salesforce',
+      'aura-language-server',
+      'lib',
+      'server.js'
+    )
   );
 
   // The debug options for the server
@@ -161,25 +162,6 @@ export async function activate(context: ExtensionContext) {
     nls.localize('client_name'),
     serverOptions,
     clientOptions
-  );
-
-  // Add Quick Open command
-  context.subscriptions.push(
-    commands.registerCommand(
-      'salesforce-lightning-quickopen',
-      createQuickOpenCommand(client)
-    )
-  );
-
-  // Add Lightning Explorer data provider
-  const componentProvider = new ComponentTreeProvider(
-    client,
-    context,
-    workspaceType
-  );
-  window.registerTreeDataProvider(
-    'salesforce-lightning-components',
-    componentProvider
   );
 
   client

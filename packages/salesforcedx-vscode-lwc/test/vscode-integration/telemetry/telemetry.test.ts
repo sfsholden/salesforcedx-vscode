@@ -4,16 +4,26 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { assert, match, SinonStub, stub } from 'sinon';
+import { assert, match, SinonStub, stub, SinonSpy, spy } from 'sinon';
 import TelemetryReporter from 'vscode-extension-telemetry';
 import { TelemetryService } from '../../../src/telemetry/telemetry';
 
 describe('Telemetry', () => {
   let reporter: TelemetryReporter;
-  let sendEvent: SinonStub;
-  let sendExceptionEvent: SinonStub;
-  let processHrtimeStub: SinonStub;
-  const mockDuration = [100, 100];
+  let sendEvent: SinonStub<
+    [
+      string,
+      ({ [key: string]: string } | undefined)?,
+      ({ [key: string]: number } | undefined)?
+    ],
+    void
+  >;
+  let sendExceptionEvent: SinonSpy<any[], any>;
+  let processHrtimeStub: SinonStub<
+    [([number, number] | undefined)?],
+    [number, number]
+  >;
+  const mockDuration: [number, number] = [100, 100];
 
   beforeEach(() => {
     reporter = new TelemetryReporter(
@@ -25,7 +35,7 @@ describe('Telemetry', () => {
     // @ts-ignore
     reporter.sendExceptionEvent = () => {};
     // @ts-ignore
-    sendExceptionEvent = stub(reporter, 'sendExceptionEvent');
+    sendExceptionEvent = spy(reporter, 'sendExceptionEvent');
     processHrtimeStub = stub(process, 'hrtime');
     processHrtimeStub.returns(mockDuration);
   });
@@ -60,11 +70,18 @@ describe('Telemetry', () => {
     await telemetryService.sendExtensionActivationEvent([0, 678]);
     assert.calledOnce(sendEvent);
 
-    const expectedData = {
-      extensionName: 'salesforcedx-vscode-lwc',
-      startupTime: match.string
+    const expectedProps = {
+      extensionName: 'salesforcedx-vscode-lwc'
     };
-    assert.calledWith(sendEvent, 'activationEvent', match(expectedData));
+    const expectedMeasures = {
+      startupTime: match.number
+    };
+    assert.calledWith(
+      sendEvent,
+      'activationEvent',
+      expectedProps,
+      match(expectedMeasures)
+    );
   });
 
   it('Should send correct data format on sendExtensionDeactivationEvent', async () => {
@@ -87,7 +104,7 @@ describe('Telemetry', () => {
     const mockCommandLogName = 'force_lwc_mock_command';
     const mockCommandHrstart: [number, number] = [100, 200];
     const mockAdditionalData = { mockKey: 'mockValue' };
-    const mockCommandDuration = [300, 400];
+    const mockCommandDuration: [number, number] = [300, 400];
     processHrtimeStub.returns(mockCommandDuration);
     await telemetryService.sendCommandEvent(
       mockCommandLogName,
@@ -96,14 +113,21 @@ describe('Telemetry', () => {
     );
     assert.calledOnce(sendEvent);
 
-    const expectedExecutionTime = '3000.0004';
-    const expectedData = {
+    const expectedExecutionTime = 3000.0004;
+    const expectedProps = {
       extensionName: 'salesforcedx-vscode-lwc',
       commandName: mockCommandLogName,
-      executionTime: expectedExecutionTime,
       mockKey: 'mockValue'
     };
-    assert.calledWith(sendEvent, 'commandExecution', match(expectedData));
+    const expectedMeasures = {
+      executionTime: expectedExecutionTime
+    };
+    assert.calledWith(
+      sendEvent,
+      'commandExecution',
+      expectedProps,
+      expectedMeasures
+    );
   });
 
   it('Should send correct data format on sendException', async () => {
@@ -118,7 +142,7 @@ describe('Telemetry', () => {
     );
     assert.calledOnce(sendExceptionEvent);
     assert.calledWith(
-      sendExceptionEvent,
+      sendExceptionEvent as SinonSpy<any[], any>,
       mockExceptionLogName,
       mockErrorMessage
     );

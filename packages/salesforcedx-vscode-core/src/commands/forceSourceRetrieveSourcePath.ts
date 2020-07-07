@@ -4,8 +4,6 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as path from 'path';
-import * as vscode from 'vscode';
 
 import {
   Command,
@@ -16,9 +14,15 @@ import {
   CancelResponse,
   ContinueResponse
 } from '@salesforce/salesforcedx-utils-vscode/out/src/types/index';
+import {
+  RegistryAccess,
+  registryData
+} from '@salesforce/source-deploy-retrieve';
+import * as vscode from 'vscode';
 import { channelService } from '../channels';
 import { nls } from '../messages';
 import { notificationService } from '../notifications';
+import { sfdxCoreSettings } from '../settings';
 import { SfdxPackageDirectories } from '../sfdxProject';
 import { telemetryService } from '../telemetry';
 import {
@@ -27,6 +31,11 @@ import {
   SfdxCommandletExecutor,
   SfdxWorkspaceChecker
 } from './util';
+import {
+  createComponentCount,
+  useBetaDeployRetrieve
+} from './util/betaDeployRetrieve';
+import { LibraryCommandletExecutor } from './util/libraryCommandlet';
 
 export class ForceSourceRetrieveSourcePathExecutor extends SfdxCommandletExecutor<
   string
@@ -95,11 +104,54 @@ export async function forceSourceRetrieveSourcePath(explorerPath: vscode.Uri) {
       return;
     }
   }
+
   const commandlet = new SfdxCommandlet(
     new SfdxWorkspaceChecker(),
     new FilePathGatherer(explorerPath),
-    new ForceSourceRetrieveSourcePathExecutor(),
+    useBetaDeployRetrieve([explorerPath])
+      ? new LibraryRetrieveSourcePathExecutor()
+      : new ForceSourceRetrieveSourcePathExecutor(),
     new SourcePathChecker()
   );
   await commandlet.run();
+}
+
+export class LibraryRetrieveSourcePathExecutor extends LibraryCommandletExecutor<
+  string
+> {
+  public async execute(response: ContinueResponse<string>): Promise<void> {
+    this.setStartTime();
+
+    try {
+      await this.build(
+        'Retrieve (Beta)',
+        'force_source_retrieve_with_sourcepath_beta'
+      );
+
+      if (this.sourceClient === undefined) {
+        throw new Error('SourceClient is not established');
+      }
+
+      this.sourceClient.tooling.retrieve = this.retrieveWrapper(
+        this.sourceClient.tooling.retrieve
+      );
+
+      const registryAccess = new RegistryAccess();
+      const components = registryAccess.getComponentsFromPath(response.data);
+      const retrievePromise = this.sourceClient.tooling.retrieve({
+        components
+      });
+      const metadataCount = JSON.stringify(createComponentCount(components));
+      await retrievePromise;
+
+      this.logMetric({ metadataCount });
+    } catch (e) {
+      telemetryService.sendException(
+        'force_source_retrieve_with_sourcepath_beta',
+        e.message
+      );
+      notificationService.showFailedExecution(this.executionName);
+      channelService.appendLine(e.message);
+    }
+  }
 }

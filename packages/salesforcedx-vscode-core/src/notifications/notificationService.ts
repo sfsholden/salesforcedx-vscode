@@ -84,13 +84,12 @@ export class NotificationService {
     cancellationToken?: vscode.CancellationToken
   ) {
     observable.subscribe(async data => {
-      if (data !== undefined && data.toString() === '0') {
+      if (data !== undefined && String(data) === '0') {
         await this.showSuccessfulExecution(executionName);
-      } else {
+      } else if (data !== null) {
         this.showFailedExecution(executionName);
       }
     });
-
     if (cancellationToken) {
       cancellationToken.onCancellationRequested(() => {
         this.showCanceledExecution(executionName);
@@ -98,7 +97,7 @@ export class NotificationService {
     }
   }
 
-  private showFailedExecution(executionName: string) {
+  public showFailedExecution(executionName: string) {
     this.showErrorMessage(
       nls.localize('notification_unsuccessful_execution_text', executionName)
     );

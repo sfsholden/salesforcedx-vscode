@@ -44,14 +44,10 @@ export class ChannelService {
     this.channel.appendLine(execution.command.toString());
     this.channel.appendLine('');
 
-    this.channel.appendLine(
-      this.getExecutionTime() + ' ' + execution.command.toCommand()
-    );
+    this.showCommandWithTimestamp(execution.command.toCommand());
 
     execution.processExitSubject.subscribe(data => {
-      this.channel.append(
-        this.getExecutionTime() + ' ' + execution.command.toCommand()
-      );
+      this.showCommandWithTimestamp(execution.command.toCommand());
       this.channel.append(' ');
       if (data !== undefined && data !== null) {
         this.channel.appendLine(
@@ -64,18 +60,17 @@ export class ChannelService {
     });
 
     execution.processErrorSubject.subscribe(data => {
-      this.channel.append(
-        this.getExecutionTime() + ' ' + execution.command.toCommand()
-      );
+      this.showCommandWithTimestamp(execution.command.toCommand());
+
       this.channel.append(' ');
       if (data !== undefined) {
-        this.channel.appendLine(
-          nls.localize('channel_end_with_error', data.message)
-        );
-
         if (/sfdx.*ENOENT/.test(data.message)) {
           this.channel.appendLine(
             nls.localize('channel_end_with_sfdx_not_found')
+          );
+        } else {
+          this.channel.appendLine(
+            nls.localize('channel_end_with_error', data.message)
           );
         }
       } else {
@@ -83,6 +78,10 @@ export class ChannelService {
       }
       this.channel.appendLine('');
     });
+  }
+
+  public showCommandWithTimestamp(commandName: string) {
+    this.channel.appendLine(this.getExecutionTime() + ' ' + commandName);
   }
 
   private getExecutionTime() {

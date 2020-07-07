@@ -11,13 +11,12 @@ import {
 } from '@salesforce/salesforcedx-utils-vscode/out/src/types/index';
 import { expect } from 'chai';
 import * as path from 'path';
-import { SinonStub, stub } from 'sinon';
+import { createSandbox, SinonSandbox, SinonStub } from 'sinon';
+import { channelService } from '../../../src/channels';
 import {
   ForceSourceRetrieveSourcePathExecutor,
   SourcePathChecker
 } from '../../../src/commands/forceSourceRetrieveSourcePath';
-
-import { channelService } from '../../../src/channels';
 import { nls } from '../../../src/messages';
 import { notificationService } from '../../../src/notifications';
 import { SfdxPackageDirectories } from '../../../src/sfdxProject';
@@ -39,24 +38,27 @@ describe('Force Source Retrieve with Sourcepath Option', () => {
 
 describe('SourcePathChecker', () => {
   let workspacePath: string;
+  let sandboxStub: SinonSandbox;
   let appendLineSpy: SinonStub;
   let showErrorMessageSpy: SinonStub;
   beforeEach(() => {
+    sandboxStub = createSandbox();
     workspacePath = getRootWorkspacePath();
-    appendLineSpy = stub(channelService, 'appendLine');
-    showErrorMessageSpy = stub(notificationService, 'showErrorMessage');
+    appendLineSpy = sandboxStub.stub(channelService, 'appendLine');
+    showErrorMessageSpy = sandboxStub.stub(
+      notificationService,
+      'showErrorMessage'
+    );
   });
 
   afterEach(() => {
-    appendLineSpy.restore();
-    showErrorMessageSpy.restore();
+    sandboxStub.restore();
   });
 
   it('Should continue when source path is in a package directory', async () => {
-    const isInPackageDirectoryStub = stub(
-      SfdxPackageDirectories,
-      'isInPackageDirectory'
-    ).returns(true);
+    const isInPackageDirectoryStub = sandboxStub
+      .stub(SfdxPackageDirectories, 'isInPackageDirectory')
+      .returns(true);
     const pathChecker = new SourcePathChecker();
     const sourcePath = path.join(workspacePath, 'package');
     const continueResponse = (await pathChecker.check({
@@ -72,10 +74,9 @@ describe('SourcePathChecker', () => {
   });
 
   it('Should notify user and cancel when source path is not inside of a package directory', async () => {
-    const isInPackageDirectoryStub = stub(
-      SfdxPackageDirectories,
-      'isInPackageDirectory'
-    ).returns(false);
+    const isInPackageDirectoryStub = sandboxStub
+      .stub(SfdxPackageDirectories, 'isInPackageDirectory')
+      .returns(false);
     const pathChecker = new SourcePathChecker();
     const cancelResponse = (await pathChecker.check({
       type: 'CONTINUE',
@@ -92,10 +93,9 @@ describe('SourcePathChecker', () => {
   });
 
   it('Should cancel and notify user if an error occurs when fetching the package directories', async () => {
-    const isInPackageDirectoryStub = stub(
-      SfdxPackageDirectories,
-      'isInPackageDirectory'
-    ).throws(new Error());
+    const isInPackageDirectoryStub = sandboxStub
+      .stub(SfdxPackageDirectories, 'isInPackageDirectory')
+      .throws(new Error());
     const pathChecker = new SourcePathChecker();
     const cancelResponse = (await pathChecker.check({
       type: 'CONTINUE',

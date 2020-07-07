@@ -6,11 +6,16 @@
  */
 
 import * as util from 'util';
-import vscode = require('vscode');
 import { TELEMETRY_OPT_OUT_LINK } from '../constants';
 import { nls } from '../messages';
 import { sfdxCoreSettings } from '../settings';
+import {
+  disableCLITelemetry,
+  getRootWorkspacePath,
+  isCLITelemetryAllowed
+} from '../util';
 import TelemetryReporter from './telemetryReporter';
+import vscode = require('vscode');
 
 const TELEMETRY_GLOBAL_VALUE = 'sfdxTelemetryMessage';
 const EXTENSION_NAME = 'salesforcedx-vscode-core';
@@ -21,15 +26,24 @@ interface CommandMetric {
   executionTime?: string;
 }
 
+export interface Measurements {
+  [key: string]: number;
+}
+
+export interface Properties {
+  [key: string]: string;
+}
+
 export interface TelemetryData {
-  properties?: { [key: string]: string };
-  measurements?: { [key: string]: number };
+  properties?: Properties;
+  measurements?: Measurements;
 }
 
 export class TelemetryService {
   private static instance: TelemetryService;
   private context: vscode.ExtensionContext | undefined;
   private reporter: TelemetryReporter | undefined;
+  private cliAllowsTelemetry: boolean = true;
 
   public static getInstance() {
     if (!TelemetryService.instance) {
@@ -38,11 +52,12 @@ export class TelemetryService {
     return TelemetryService.instance;
   }
 
-  public initializeService(
+  public async initializeService(
     context: vscode.ExtensionContext,
     machineId: string
-  ): void {
+  ): Promise<void> {
     this.context = context;
+    this.cliAllowsTelemetry = await this.checkCliTelemetry();
     const isDevMode = machineId === 'someValue.machineId';
     // TelemetryReporter is not initialized if user has disabled telemetry setting.
     if (
@@ -62,6 +77,8 @@ export class TelemetryService {
       );
       this.context.subscriptions.push(this.reporter);
     }
+
+    this.setCliTelemetryEnabled(this.isTelemetryEnabled());
   }
 
   public getReporter(): TelemetryReporter | undefined {
@@ -69,7 +86,7 @@ export class TelemetryService {
   }
 
   public isTelemetryEnabled(): boolean {
-    return sfdxCoreSettings.getTelemetryEnabled();
+    return sfdxCoreSettings.getTelemetryEnabled() && this.cliAllowsTelemetry;
   }
 
   private getHasTelemetryMessageBeenShown(): boolean {
@@ -121,10 +138,13 @@ export class TelemetryService {
   public sendExtensionActivationEvent(hrstart: [number, number]): void {
     if (this.reporter !== undefined && this.isTelemetryEnabled) {
       const startupTime = this.getEndHRTime(hrstart);
-      this.reporter.sendTelemetryEvent('activationEvent', {
-        extensionName: EXTENSION_NAME,
-        startupTime
-      });
+      this.reporter.sendTelemetryEvent(
+        'activationEvent',
+        {
+          extensionName: EXTENSION_NAME
+        },
+        { startupTime }
+      );
     }
   }
 
@@ -139,24 +159,32 @@ export class TelemetryService {
   public sendCommandEvent(
     commandName?: string,
     hrstart?: [number, number],
-    additionalData?: any
+    properties?: Properties,
+    measurements?: Measurements
   ): void {
     if (
       this.reporter !== undefined &&
       this.isTelemetryEnabled() &&
       commandName
     ) {
-      const baseTelemetry: CommandMetric = {
+      const baseProperties: CommandMetric = {
         extensionName: EXTENSION_NAME,
         commandName
       };
+      const aggregatedProps = Object.assign(baseProperties, properties);
 
-      if (hrstart) {
-        baseTelemetry['executionTime'] = this.getEndHRTime(hrstart);
+      let aggregatedMeasurements: Measurements | undefined;
+      if (hrstart || measurements) {
+        aggregatedMeasurements = Object.assign({}, measurements);
+        if (hrstart) {
+          aggregatedMeasurements.executionTime = this.getEndHRTime(hrstart);
+        }
       }
-
-      const aggregatedTelemetry = Object.assign(baseTelemetry, additionalData);
-      this.reporter.sendTelemetryEvent('commandExecution', aggregatedTelemetry);
+      this.reporter.sendTelemetryEvent(
+        'commandExecution',
+        aggregatedProps,
+        aggregatedMeasurements
+      );
     }
   }
 
@@ -182,8 +210,18 @@ export class TelemetryService {
     }
   }
 
-  public getEndHRTime(hrstart: [number, number]): string {
+  public getEndHRTime(hrstart: [number, number]): number {
     const hrend = process.hrtime(hrstart);
-    return util.format('%d%d', hrend[0], hrend[1] / 1000000);
+    return Number(util.format('%d%d', hrend[0], hrend[1] / 1000000));
+  }
+
+  public async checkCliTelemetry(): Promise<boolean> {
+    return await isCLITelemetryAllowed();
+  }
+
+  public setCliTelemetryEnabled(isEnabled: boolean) {
+    if (!isEnabled) {
+      disableCLITelemetry();
+    }
   }
 }

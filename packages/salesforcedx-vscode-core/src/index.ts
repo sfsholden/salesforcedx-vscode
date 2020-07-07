@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+
 import * as vscode from 'vscode';
 import { channelService } from './channels';
 import {
@@ -31,9 +32,11 @@ import {
   forceLightningEventCreate,
   forceLightningInterfaceCreate,
   forceLightningLwcCreate,
+  forceLightningLwcTestCreate,
   forceOrgCreate,
   forceOrgDisplay,
   forceOrgOpen,
+  forcePackageInstall,
   forceProjectWithManifestCreate,
   forceSfdxProjectCreate,
   forceSourceDelete,
@@ -66,6 +69,7 @@ import {
   SfdxCommandletExecutor,
   SfdxWorkspaceChecker
 } from './commands/util';
+import { registerConflictView, setupConflictView } from './conflict';
 import { getDefaultUsernameOrAlias, setupWorkspaceOrgType } from './context';
 import * as decorators from './decorators';
 import { isDemoMode } from './modes/demo-mode';
@@ -75,11 +79,7 @@ import { OrgList } from './orgPicker';
 import { registerPushOrDeployOnSave, sfdxCoreSettings } from './settings';
 import { taskViewService } from './statuses';
 import { telemetryService } from './telemetry';
-import {
-  hasRootWorkspace,
-  isCLIInstalled,
-  showCLINotInstalledMessage
-} from './util';
+import { hasRootWorkspace, isCLIInstalled } from './util';
 import { OrgAuthInfo } from './util/authInfo';
 
 function registerCommands(
@@ -225,6 +225,11 @@ function registerCommands(
     forceLightningLwcCreate
   );
 
+  const forceLightningLwcTestCreateCmd = vscode.commands.registerCommand(
+    'sfdx.force.lightning.lwc.test.create',
+    forceLightningLwcTestCreate
+  );
+
   const forceDebuggerStopCmd = vscode.commands.registerCommand(
     'sfdx.force.debugger.stop',
     forceDebuggerStop
@@ -269,6 +274,11 @@ function registerCommands(
   const forceProjectCreateCmd = vscode.commands.registerCommand(
     'sfdx.force.project.create',
     forceSfdxProjectCreate
+  );
+
+  const forcePackageInstallCmd = vscode.commands.registerCommand(
+    'sfdx.force.package.install',
+    forcePackageInstall
   );
 
   const forceProjectWithManifestCreateCmd = vscode.commands.registerCommand(
@@ -347,6 +357,7 @@ function registerCommands(
     forceLightningEventCreateCmd,
     forceLightningInterfaceCreateCmd,
     forceLightningLwcCreateCmd,
+    forceLightningLwcTestCreateCmd,
     forceSourceStatusLocalCmd,
     forceSourceStatusRemoteCmd,
     forceDebuggerStopCmd,
@@ -355,6 +366,7 @@ function registerCommands(
     forceOrgDisplayDefaultCmd,
     forceOrgDisplayUsernameCmd,
     forceProjectCreateCmd,
+    forcePackageInstallCmd,
     forceProjectWithManifestCreateCmd,
     forceApexTriggerCreateCmd,
     forceStartApexDebugLoggingCmd,
@@ -439,10 +451,9 @@ async function setupOrgBrowser(
 
 export async function activate(context: vscode.ExtensionContext) {
   const extensionHRStart = process.hrtime();
-  // Telemetry
   const machineId =
     vscode && vscode.env ? vscode.env.machineId : 'someValue.machineId';
-  telemetryService.initializeService(context, machineId);
+  await telemetryService.initializeService(context, machineId);
   telemetryService.showTelemetryMessage();
 
   // Task View
@@ -481,14 +492,6 @@ export async function activate(context: vscode.ExtensionContext) {
       telemetryService
     };
 
-    if (!isCLIInstalled()) {
-      showCLINotInstalledMessage();
-      telemetryService.sendException(
-        'core_internal_no_cli',
-        'Salesforce CLI is not installed, internal dev mode'
-      );
-    }
-
     telemetryService.sendExtensionActivationEvent(extensionHRStart);
     console.log('SFDX CLI Extension Activated (internal dev mode)');
     return internalApi;
@@ -497,10 +500,13 @@ export async function activate(context: vscode.ExtensionContext) {
   // Context
   let sfdxProjectOpened = false;
   if (hasRootWorkspace()) {
-    const files = await vscode.workspace.findFiles('**/sfdx-project.json');
+    const files = await vscode.workspace.findFiles(
+      '**/sfdx-project.json',
+      '**/{node_modules,out}/**'
+    );
     sfdxProjectOpened = files && files.length > 0;
   }
-
+  // TODO: move this and the replay debugger commands to the apex extension
   let replayDebuggerExtensionInstalled = false;
   if (
     vscode.extensions.getExtension(
@@ -532,33 +538,27 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(registerOrgPickerCommands(orgList));
 
   await setupOrgBrowser(context);
-  if (isCLIInstalled()) {
-    // Set context for defaultusername org
-    await setupWorkspaceOrgType(defaultUsernameorAlias);
-    await orgList.registerDefaultUsernameWatcher(context);
-  } else {
-    showCLINotInstalledMessage();
-    telemetryService.sendException(
-      'core_no_cli',
-      'Salesforce CLI is not installed'
-    );
-  }
+  await setupConflictView(context);
+  // Set context for defaultusername org
+  await setupWorkspaceOrgType(defaultUsernameorAlias);
+  await orgList.registerDefaultUsernameWatcher(context);
 
   // Register filewatcher for push or deploy on save
   await registerPushOrDeployOnSave();
   // Commands
   const commands = registerCommands(context);
   context.subscriptions.push(commands);
+  context.subscriptions.push(registerConflictView());
 
   // Scratch Org Decorator
   if (hasRootWorkspace()) {
     decorators.showOrg();
     decorators.monitorOrgConfigChanges();
-  }
 
-  // Demo mode Decorator
-  if (hasRootWorkspace() && isDemoMode()) {
-    decorators.showDemoMode();
+    // Demo mode Decorator
+    if (isDemoMode()) {
+      decorators.showDemoMode();
+    }
   }
 
   const api: any = {

@@ -4,8 +4,8 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { Indexer } from '@salesforce/lightning-lsp-common';
 import { parse } from 'jest-editor-support';
-import { Indexer } from 'lightning-lsp-common';
 import * as vscode from 'vscode';
 import {
   extractPositionFromFailureMessage,
@@ -201,7 +201,8 @@ class LwcTestIndexer implements Indexer, vscode.Disposable {
   private async indexAllTestFiles(): Promise<TestFileInfo[]> {
     // TODO, infer package directory from sfdx project json
     const lwcJestTestFiles = await vscode.workspace.findFiles(
-      LWC_TEST_GLOB_PATTERN
+      LWC_TEST_GLOB_PATTERN,
+      '**/node_modules/**'
     );
     const allTestFileInfo = lwcJestTestFiles.map(lwcJestTestFile => {
       const { fsPath } = lwcJestTestFile;

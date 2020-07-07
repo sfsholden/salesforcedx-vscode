@@ -6,8 +6,9 @@
  */
 
 import { ConfigFile } from '@salesforce/core';
+import { testSetup } from '@salesforce/core/lib/testSetup';
 import { expect } from 'chai';
-import { sandbox, SinonSandbox, SinonSpy, SinonStub } from 'sinon';
+import { createSandbox, SinonSandbox, SinonSpy, SinonStub } from 'sinon';
 import {
   createExecutor,
   ForceAuthDevHubDemoModeExecutor,
@@ -16,6 +17,12 @@ import {
 import { DEFAULT_DEV_HUB_USERNAME_KEY } from '../../../src/constants';
 import { nls } from '../../../src/messages';
 import { ConfigSource, OrgAuthInfo } from '../../../src/util/index';
+
+class TestForceAuthDevHubExecutor extends ForceAuthDevHubExecutor {
+  public getShowChannelOutput() {
+    return this.showChannelOutput;
+  }
+}
 
 // tslint:disable:no-unused-expression
 describe('Force Auth Web Login for Dev Hub', () => {
@@ -31,18 +38,22 @@ describe('Force Auth Web Login for Dev Hub', () => {
   });
 });
 
+// Setup the test environment.
+const $$ = testSetup();
+
 describe('configureDefaultDevHubLocation on processExit of ForceAuthDevHubExecutor', () => {
   let getDefaultDevHubUsernameStub: SinonStub;
   let setGlobalDefaultDevHubStub: SinonStub;
-  let configWriteStub: SinonStub;
-  let configSetStub: SinonStub;
+  let configWriteStub: SinonSpy;
+  let configSetStub: SinonSpy;
   let configCreateSpy: SinonSpy;
 
   const authWebLogin = ForceAuthDevHubExecutor.prototype;
   let sb: SinonSandbox;
 
   beforeEach(() => {
-    sb = sandbox.create();
+    $$.SANDBOXES.CONFIG.restore();
+    sb = createSandbox();
     getDefaultDevHubUsernameStub = sb.stub(
       OrgAuthInfo,
       'getDefaultDevHubUsernameOrAlias'
@@ -51,12 +62,13 @@ describe('configureDefaultDevHubLocation on processExit of ForceAuthDevHubExecut
       authWebLogin,
       'setGlobalDefaultDevHub'
     );
-    configWriteStub = sb.stub(ConfigFile.prototype, 'write');
-    configSetStub = sb.stub(ConfigFile.prototype, 'set');
+    configWriteStub = sb.spy(ConfigFile.prototype, 'write');
+    configSetStub = sb.spy(ConfigFile.prototype, 'set');
     configCreateSpy = sb.spy(ConfigFile, 'create');
   });
 
   afterEach(() => {
+    $$.SANDBOX.restore();
     sb.restore();
   });
 
@@ -128,7 +140,7 @@ describe('Force Auth Dev Hub is based on environment variables', () => {
     });
 
     afterEach(() => {
-      process.env.SFXD_ENV = originalValue;
+      process.env.SFDX_ENV = originalValue;
     });
 
     it('Should use ForceAuthDevHubDemoModeExecutor if demo mode is true', () => {
@@ -146,6 +158,13 @@ describe('Force Auth Dev Hub is based on environment variables', () => {
   describe('in container mode', () => {
     afterEach(() => {
       delete process.env.SFDX_CONTAINER_MODE;
+    });
+    it('Should expose the output channel when in container mode', () => {
+      const notContainerMode = new TestForceAuthDevHubExecutor();
+      expect(notContainerMode.getShowChannelOutput()).to.be.false;
+      process.env.SFDX_CONTAINER_MODE = 'true';
+      const containerMode = new TestForceAuthDevHubExecutor();
+      expect(containerMode.getShowChannelOutput()).to.be.true;
     });
     it('Should use force:auth:web:login when container mode is not defined', () => {
       const authWebLogin = new ForceAuthDevHubExecutor();

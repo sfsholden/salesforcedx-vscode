@@ -22,10 +22,10 @@ export class CommandOutput {
     return new Promise<string>(
       (resolve: (result: string) => void, reject: (reason: string) => void) => {
         execution.processExitSubject.subscribe(data => {
-          if (data !== undefined && data.toString() === '0') {
+          if (data !== undefined && String(data) === '0') {
             return resolve(this.stdoutBuffer);
           } else {
-            reject(this.stderrBuffer);
+            return reject(this.stderrBuffer || this.stdoutBuffer);
           }
         });
       }

@@ -1,53 +1,37 @@
 #!/usr/bin/env node
 
 const shell = require('shelljs');
+const { checkVSCodeVersion, checkBaseBranch } = require('./validation-utils');
+const logger = require('./logger-util');
+
 shell.set('-e');
 shell.set('+v');
 
-if (!shell.which('lerna')) {
-  console.log('lerna is not installed or could not be found');
-  process.exit(-1);
-}
+const currentVersion = require('../packages/salesforcedx-vscode/package.json')
+  .version;
+const [version, major, minor, patch] = currentVersion.match(
+  /^(\d+)\.?(\d+)\.?(\*|\d+)$/
+);
+const bumpMinor = parseInt(minor) + 1;
+shell.env['SALESFORCEDX_VSCODE_VERSION'] = `${major}.${bumpMinor}.${patch}`;
 
-// Checks that you have specified the next version as an environment variable, and that it's properly formatted.
+checkVSCodeVersion();
+
 const nextVersion = process.env['SALESFORCEDX_VSCODE_VERSION'];
-if (!nextVersion) {
-  console.log(
-    'You must specify the next version of the extension by setting SALESFORCEDX_VSCODE_VERSION as an environment variable.'
-  );
-  process.exit(-1);
-} else {
-  const [version, major, minor, patch] = nextVersion.match(
-    /^(\d+)\.(\d+)\.(\d+)$/
-  );
-  const currentBranch = shell
-    .exec('git rev-parse --abbrev-ref HEAD', {
-      silent: true
-    })
-    .stdout.trim();
-
-  if (currentBranch !== 'develop') {
-    console.log(
-      `You must execute this script in the develop branch, you are currently running the script on branch ${currentBranch}`
-    );
-    process.exit(-1);
-  }
-}
+logger.info(`Release version: ${nextVersion}`);
+checkBaseBranch('develop');
 
 const releaseBranchName = `release/v${nextVersion}`;
 
 // Check if release branch has already been created
 const isRemoteReleaseBranchExist = shell
-  .exec(
-    `git ls-remote --heads git@github.com:forcedotcom/salesforcedx-vscode.git ${releaseBranchName}`,
-    {
-      silent: true
-    }
-  )
+  .exec(`git ls-remote --heads origin ${releaseBranchName}`, {
+    silent: true
+  })
   .stdout.trim();
 
 if (isRemoteReleaseBranchExist) {
-  console.log(
+  logger.error(
     `${releaseBranchName} already exists in remote. You might want to verify the value assigned to SALESFORCEDX_VSCODE_VERSION`
   );
   process.exit(-1);
