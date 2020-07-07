@@ -414,21 +414,21 @@ workflows:
     jobs:
       - build-all
       - unit-tests
-      - integration-tests
+      #- integration-tests
 
   publish-workflow:
     when: << pipeline.parameters.publish >>
     jobs:
       - build-all
       - unit-tests
-      - integration-tests
+      #- integration-tests
       - publish:
           e: default-executor
           type: approval
           requires:
             - build-all
             - unit-tests
-            - integration-tests
+            #- integration-tests
           filters:
             branches:
               only:
