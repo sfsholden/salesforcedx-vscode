@@ -228,10 +228,6 @@ jobs:
       - checkout
       - restore_dependency_cache
       - gus-prepare-environment-variables
-      - slack/notify:
-          channel: 'pdt_releases'
-          color: '#42e2f4'
-          message: 'TESTING - VSCode Extensions v${GUS_BUILD} have been published to the marketplace'
 
   build-all:
     description: 'Build artifacts in a non-Windows environment'
@@ -258,7 +254,7 @@ jobs:
       - build-win
       - run:
           command: |
-            echo $(circleci tests glob "out/test/unit/**/*.js" | circleci tests split)
+            echo $(circleci tests glob "out/test/unit/**/*.js")
       #- run:
       #    name: 'Running unit tests'
       #    shell: cmd.exe
@@ -374,10 +370,10 @@ jobs:
       #- sfchangecase/update:
       #    location: REPO_LOCATION
       #    release: GUS_RELEASE
-      - slack/notify:
-          channel: 'pdt_releases'
-          color: '#42e2f4'
-          message: 'VSCode Extensions have been published to the marketplace'
+      #- slack/notify:
+      #    channel: 'pdt_releases'
+      #    color: '#42e2f4'
+      #    message: 'VSCode Extensions v${GUS_BUILD} have been published to the marketplace'
 
   create-release-branch:
     parameters:
