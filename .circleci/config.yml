@@ -34,6 +34,9 @@ parameters:
   publish:
     type: boolean
     default: false
+  create-release-branch:
+    type: boolean
+    default: false
 
 commands:
   compile:
@@ -84,10 +87,10 @@ commands:
           name: 'Prepare environment variables for GUS Change Case Management'
           command: |
             export GUS_BUILD="$(node -pe "require('<< parameters.package-json-path >>').version")"
-            echo "export GUS_BUILD=$GUS_BUILD" >> $BASH_ENV
+            echo "export RELEASE_VERSION=$GUS_BUILD" >> $BASH_ENV
             echo "export GUS_RELEASE=<< parameters.release-tag-name >>.$GUS_BUILD" >> $BASH_ENV
             source $BASH_ENV
-            echo "GUS_BUILD is: ${GUS_BUILD}"
+            echo "RELEASE_VERSION is: ${RELEASE_VERSION}"
             echo "GUS_RELEASE is: ${GUS_RELEASE}"
 
   install:
@@ -96,6 +99,27 @@ commands:
       - run: npm install
       - run: npm --version
       - run: node --version
+
+  merge-release-branch:
+    parameters:
+      publishing-branch:
+        type: string
+        default: 'master'
+      develop-branch:
+        type: string
+        default: 'develop'
+    steps:
+      - run:
+          name: 'Merging release branch into publish branch and develop branch'
+          command: |
+            echo "Merging release/v${RELEASE_VERSION} into << parameters.publishing-branch >>"
+            git checkout << parameters.publishing-branch >>
+            git merge release/v${RELEASE_VERSION}
+            git push
+            echo "Merging release/v${RELEASE_VERSION}" into << parameters.develop-branch >>"
+            git checkout << parameters.develop-branch >>
+            git merge release/v${RELEASE_VERSION}
+            git push
 
   package-extensions:
     steps:
@@ -338,6 +362,7 @@ jobs:
           color: '#FFDEAD'
           message: 'TESTING - Starting release for VSCode Extensions'
       - ssh-config
+      - merge-release-branch
       - checkout
       - restore_dependency_cache
       #- run:
@@ -373,7 +398,7 @@ jobs:
       - slack/notify:
           channel: 'pdt_releases'
           color: '#9bcd9b'
-          message: 'TESTING - VSCode Extensions v${GUS_BUILD} have been published to the marketplace'
+          message: 'TESTING - VSCode Extensions v${RELEASE_VERSION} have been published to the marketplace'
 
   create-release-branch:
     parameters:
@@ -403,8 +428,6 @@ jobs:
           color: '#d8bfd8'
           message: 'VSCode Extensions release branch has been cut'
 
-  # TODO - merge branch job
-
 workflows:
   version: 2.1
 
@@ -433,6 +456,9 @@ workflows:
             branches:
               only:
                 - master
+
+  create-release-branch-workflow:
+    when: << pipeline.parameters.create-release-branch >>
 
   # run a build/test every mid-night
   scheduled-workflow:
