@@ -442,13 +442,15 @@ workflows:
   publish-workflow:
     when: << pipeline.parameters.publish >>
     jobs:
+      - hold: # Requires manual approval in Circle Ci
+          type: approval
       - build-all
       - unit-tests
       #- integration-tests
       - publish:
           e: default-executor
-          type: approval
           requires:
+            - hold
             - build-all
             - unit-tests
             #- integration-tests
@@ -460,9 +462,12 @@ workflows:
   create-release-branch-workflow:
     when: << pipeline.parameters.create-release >>
     jobs:
+      - hold: # Requires manual approval in Circle Ci
+          type: approval
       - create-release-branch:
           e: default-executor
-          type: approval
+          requires:
+            - hold
           filters:
             branches:
               only:
