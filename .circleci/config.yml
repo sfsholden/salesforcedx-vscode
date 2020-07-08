@@ -459,6 +459,14 @@ workflows:
 
   create-release-branch-workflow:
     when: << pipeline.parameters.create-release-branch >>
+    jobs:
+      - create-release-branch:
+          e: default-executor
+          type: approval
+          filters:
+            branches:
+              only:
+                - develop
 
   # run a build/test every mid-night
   scheduled-workflow:
