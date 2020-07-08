@@ -399,6 +399,9 @@ jobs:
           channel: 'pdt_releases'
           color: '#9bcd9b'
           message: 'TESTING - VSCode Extensions v${RELEASE_VERSION} have been published to the marketplace'
+      - slack/status:
+          channel: 'pdt_releases'
+          fail_only: true
 
   create-release-branch:
     parameters:
@@ -409,7 +412,7 @@ jobs:
       - slack/notify:
           channel: 'pdt_releases'
           color: '#FFDEAD'
-          message: 'Starting creation of release branch for VSCode Extensions'
+          message: 'TESTING - Starting creation of release branch for VSCode Extensions'
       - ssh-config
       - checkout
       - restore_dependency_cache
@@ -426,7 +429,10 @@ jobs:
       - slack/notify:
           channel: 'pdt_releases'
           color: '#d8bfd8'
-          message: 'VSCode Extensions release branch has been cut'
+          message: 'TESTING - VSCode Extensions release branch has been cut'
+      - slack/status:
+          channel: 'pdt_releases'
+          fail_only: true
 
 workflows:
   version: 2.1
@@ -445,16 +451,20 @@ workflows:
   publish-workflow:
     when: << pipeline.parameters.publish >>
     jobs:
-      - build-all
-      - unit-tests
+      - slack/approval-notification:
+          message: Pending Approval for Publish
+          channel: 'pdt_releases'
+          color: '#0E1111'
+      #- build-all
+      #- unit-tests
       #- integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - publish:
           e: default-executor
           requires:
-            - build-all
-            - unit-tests
+            #- build-all
+            #- unit-tests
             #- integration-tests
             - hold
           filters:
@@ -465,16 +475,20 @@ workflows:
   create-release-branch-workflow:
     when: << pipeline.parameters.create-release >>
     jobs:
-      - build-all
-      - unit-tests
+      - slack/approval-notification:
+          message: Pending Approval for Creation of Release Branch
+          channel: 'pdt_releases'
+          color: '#0E1111'
+      #- build-all
+      #- unit-tests
       #- integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - create-release-branch:
           e: default-executor
           requires:
-            - build-all
-            - unit-tests
+            #- build-all
+            #- unit-tests
             #- integration-tests
             - hold
           filters:
