@@ -69,10 +69,12 @@ commands:
     steps:
       - run:
           name: 'Configuring GitHub'
+          #  git config user.email "<< parameters.gh_email >>"
+          #  git config user.name "<< parameters.gh_username >>"
           command: |
             git config credential.helper 'cache --timeout=<< parameters.cache_timeout >>'
-            git config user.email "<< parameters.gh_email >>"
-            git config user.name "<< parameters.gh_username >>"
+            git config user.email "shelby.holden@salesforce.com"
+            git config user.name "sfsholden"
 
   gus-prepare-environment-variables:
     parameters:
