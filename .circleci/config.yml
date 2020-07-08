@@ -102,7 +102,7 @@ commands:
 
   merge-release-branch:
     parameters:
-      publishing-branch:
+      production-branch:
         type: string
         default: 'master'
       develop-branch:
@@ -110,10 +110,10 @@ commands:
         default: 'develop'
     steps:
       - run:
-          name: 'Merging release branch into publish branch and develop branch'
+          name: 'Merging release branch into production branch and develop branch'
           command: |
-            echo "Merging release/v${RELEASE_VERSION} into << parameters.publishing-branch >>"
-            git checkout << parameters.publishing-branch >>
+            echo "Merging release/v${RELEASE_VERSION} into << parameters.production-branch >>"
+            git checkout << parameters.production-branch >>
             git merge release/v${RELEASE_VERSION}
             git push
             echo "Merging release/v${RELEASE_VERSION}" into << parameters.develop-branch >>"
