@@ -34,7 +34,7 @@ parameters:
   publish:
     type: boolean
     default: false
-  create-release-branch:
+  create-release:
     type: boolean
     default: false
 
@@ -458,7 +458,7 @@ workflows:
                 - master
 
   create-release-branch-workflow:
-    when: << pipeline.parameters.create-release-branch >>
+    when: << pipeline.parameters.create-release >>
     jobs:
       - create-release-branch:
           e: default-executor
@@ -466,7 +466,7 @@ workflows:
           filters:
             branches:
               only:
-                - sh/ccPlay
+                - develop
 
   # run a build/test every mid-night
   scheduled-workflow:
