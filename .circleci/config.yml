@@ -362,15 +362,15 @@ jobs:
           color: '#FFDEAD'
           message: 'TESTING - Starting release for VSCode Extensions'
       - ssh-config
-      - merge-release-branch
       - checkout
+      - gus-prepare-environment-variables
+      - merge-release-branch
       - restore_dependency_cache
       #- run:
       #    name: 'Setup gus case management'
       #    command: |
       #      sudo npm install -g @salesforce/change-case-management
       #- sfchangecase/install
-      - gus-prepare-environment-variables
       #- sfchangecase/create:
       #    location: REPO_LOCATION
       #    release: GUS_RELEASE
