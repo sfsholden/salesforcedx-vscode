@@ -49,6 +49,12 @@
       }
     },
     {
+      "label": "Create Release Branch",
+      "command": "./scripts/create-release-branch-command.sh",
+      "type": "shell",
+      "args": ["${input:circleCiId}"]
+    },
+    {
       "label": "Lint",
       "command": "npm",
       "type": "shell",

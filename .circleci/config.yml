@@ -466,7 +466,7 @@ workflows:
           filters:
             branches:
               only:
-                - develop
+                - sh/ccPlay
 
   # run a build/test every mid-night
   scheduled-workflow:
