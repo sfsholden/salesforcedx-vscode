@@ -37,6 +37,9 @@ parameters:
   create-release:
     type: boolean
     default: false
+  skip-branch-merge:
+    type: boolean
+    default: false
 
 commands:
   compile:
@@ -106,17 +109,23 @@ commands:
         type: string
         default: 'develop'
     steps:
-      - run:
-          name: 'Merging release branch into production branch and develop branch'
-          command: |
-            echo "Merging release/v${RELEASE_VERSION} into << pipeline.git.branch >>"
-            git merge origin/release/v${RELEASE_VERSION}
-            git push
-            echo "Merging release/v${RELEASE_VERSION}" into << parameters.develop-branch >>"
-            git checkout << parameters.develop-branch >>
-            git merge origin/release/v${RELEASE_VERSION}
-            git push
-            git checkout << pipeline.git.branch >>
+      # If skip-branch-merge is true, do not perform the merge steps.
+      - unless:
+          condition: << pipeline.parameters.skip-branch-merge >>
+          steps:
+            - run:
+                name: 'Merging release branch into production branch and develop branch'
+                command: |
+                  echo "Fetching release branch"
+                  git fetch origin/release/v${RELEASE_VERSION}
+                  echo "Merging origin/release/v${RELEASE_VERSION} into << pipeline.git.branch >>"
+                  git merge origin/release/v${RELEASE_VERSION}
+                  git push
+                  echo "Merging origin/release/v${RELEASE_VERSION}" into << parameters.develop-branch >>"
+                  git checkout << parameters.develop-branch >>
+                  git merge origin/release/v${RELEASE_VERSION}
+                  git push
+                  git checkout << pipeline.git.branch >>
 
   package-extensions:
     steps:
