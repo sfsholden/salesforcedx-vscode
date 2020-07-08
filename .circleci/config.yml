@@ -420,11 +420,11 @@ jobs:
       - run:
           name: Install Lerna
           command: sudo npm install -g lerna@<< pipeline.parameters.lerna-version >>
-      - run:
-          name: Create release branch
-          command: |
-            git branch
-            scripts/create-release-branch.js
+      #- run:
+      #    name: Create release branch
+      #    command: |
+      #      git branch
+      #      scripts/create-release-branch.js
       - slack/notify:
           channel: 'pdt_releases'
           color: '#d8bfd8'
