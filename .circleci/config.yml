@@ -370,7 +370,7 @@ jobs:
       - ssh-config
       - checkout
       - gus-prepare-environment-variables
-      - merge-release-branch
+      #- merge-release-branch
       - restore_dependency_cache
       #- run:
       #    name: 'Setup gus case management'
