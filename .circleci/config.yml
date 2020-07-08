@@ -30,7 +30,7 @@ parameters:
     default: 300
   fingerprint:
     type: string
-    default: '29:1d:f7:f8:e4:2c:42:5e:b7:ec:ad:c6:43:51:46:57'
+    default: 'dc:00:e0:c3:28:59:ad:c1:01:49:9f:d5:88:b3:17:da'
   publish:
     type: boolean
     default: false
@@ -445,18 +445,18 @@ workflows:
   publish-workflow:
     when: << pipeline.parameters.publish >>
     jobs:
-      - hold: # Requires manual approval in Circle Ci
-          type: approval
       - build-all
       - unit-tests
       #- integration-tests
+      - hold: # Requires manual approval in Circle Ci
+          type: approval
       - publish:
           e: default-executor
           requires:
-            - hold
             - build-all
             - unit-tests
             #- integration-tests
+            - hold
           filters:
             branches:
               only:
@@ -465,11 +465,17 @@ workflows:
   create-release-branch-workflow:
     when: << pipeline.parameters.create-release >>
     jobs:
+      - build-all
+      - unit-tests
+      #- integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - create-release-branch:
           e: default-executor
           requires:
+            - build-all
+            - unit-tests
+            #- integration-tests
             - hold
           filters:
             branches:
