@@ -30,7 +30,7 @@ parameters:
     default: 300
   fingerprint:
     type: string
-    default: '3b:68:69:7d:19:a4:50:69:ad:b8:db:57:f9:9c:f0:3f'
+    default: '29:1d:f7:f8:e4:2c:42:5e:b7:ec:ad:c6:43:51:46:57'
   publish:
     type: boolean
     default: false
@@ -69,12 +69,10 @@ commands:
     steps:
       - run:
           name: 'Configuring GitHub'
-          #  git config user.email "<< parameters.gh_email >>"
-          #  git config user.name "<< parameters.gh_username >>"
           command: |
             git config credential.helper 'cache --timeout=<< parameters.cache_timeout >>'
-            git config user.email "shelby.holden@salesforce.com"
-            git config user.name "sfsholden"
+            git config user.email "<< parameters.gh_email >>"
+            git config user.name "<< parameters.gh_username >>"
 
   gus-prepare-environment-variables:
     parameters:
@@ -420,11 +418,11 @@ jobs:
       - run:
           name: Install Lerna
           command: sudo npm install -g lerna@<< pipeline.parameters.lerna-version >>
-      #- run:
-      #    name: Create release branch
-      #    command: |
-      #      git branch
-      #      scripts/create-release-branch.js
+      - run:
+          name: Create release branch
+          command: |
+            git branch
+            scripts/create-release-branch.js
       - slack/notify:
           channel: 'pdt_releases'
           color: '#d8bfd8'
@@ -435,7 +433,10 @@ workflows:
 
   # run a build and a windows test on every commit
   commit-workflow:
-    unless: << pipeline.parameters.publish >>
+    when:
+      and:
+        - not: << pipeline.parameters.publish >>
+        - not: << pipeline.parameters.create-release >>
     jobs:
       - build-all
       - unit-tests
