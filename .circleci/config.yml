@@ -446,8 +446,8 @@ workflows:
         - not: << pipeline.parameters.create-release >>
     jobs:
       - build-all
-      - unit-tests
-      - integration-tests
+      # - unit-tests
+      # - integration-tests
 
   publish-workflow:
     when: << pipeline.parameters.publish >>
@@ -457,16 +457,16 @@ workflows:
           channel: 'shelbys-test-channel'
           color: '#0E1111'
       - build-all
-      - unit-tests
-      - integration-tests
+      # - unit-tests
+      # - integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - publish:
           e: default-executor
           requires:
             - build-all
-            - unit-tests
-            - integration-tests
+            # - unit-tests
+            # - integration-tests
             - hold
           filters:
             branches:
@@ -481,16 +481,16 @@ workflows:
           channel: 'shelbys-test-channel'
           color: '#0E1111'
       - build-all
-      - unit-tests
-      - integration-tests
+      # - unit-tests
+      # - integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - create-release-branch:
           e: default-executor
           requires:
             - build-all
-            - unit-tests
-            - integration-tests
+            # - unit-tests
+            # - integration-tests
             - hold
           filters:
             branches:
