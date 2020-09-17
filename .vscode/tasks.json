@@ -6,7 +6,10 @@
       "label": "Bootstrap",
       "command": "npm",
       "type": "shell",
-      "presentation": { "focus": false, "panel": "shared" },
+      "presentation": {
+        "focus": false,
+        "panel": "shared"
+      },
       "args": ["run", "bootstrap"],
       "isBackground": false
     },
@@ -19,6 +22,28 @@
         "panel": "shared"
       },
       "args": ["run", "clean"],
+      "isBackground": false
+    },
+    {
+      "label": "Commit",
+      "command": "npm",
+      "type": "shell",
+      "presentation": {
+        "focus": true,
+        "panel": "shared"
+      },
+      "args": ["run", "commit"],
+      "isBackground": false
+    },
+    {
+      "label": "Commitizen Initialization",
+      "command": "npm",
+      "type": "shell",
+      "presentation": {
+        "focus": false,
+        "panel": "shared"
+      },
+      "args": ["run", "commit-init"],
       "isBackground": false
     },
     {
@@ -50,7 +75,7 @@
     },
     {
       "label": "Create Release Branch",
-      "command": "./scripts/create-release-branch-command.sh",
+      "command": "./scripts/create-release-branch-workflow.sh",
       "type": "shell",
       "args": ["${input:circleCiId}"]
     },
@@ -67,7 +92,7 @@
     },
     {
       "label": "Publish Extensions",
-      "command": "./scripts/publish-command.sh",
+      "command": "./scripts/publish-workflow.sh",
       "type": "shell",
       "args": ["${input:circleCiId}"]
     },
@@ -76,12 +101,11 @@
       "command": "npm",
       "type": "shell",
       "presentation": {
-        "reveal": "silent",
         "focus": false,
         "panel": "dedicated"
       },
       "args": ["run", "watch"],
-      "isBackground": true,
+      "isBackground": false,
       "problemMatcher": "$tsc-watch"
     }
   ],

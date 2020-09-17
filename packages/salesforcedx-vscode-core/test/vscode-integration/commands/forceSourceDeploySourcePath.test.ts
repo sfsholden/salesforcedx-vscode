@@ -5,10 +5,21 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
+import { AuthInfo, ConfigAggregator, Connection } from '@salesforce/core';
+import { MockTestOrgData, testSetup } from '@salesforce/core/lib/testSetup';
+import { RegistryAccess } from '@salesforce/source-deploy-retrieve';
+import { MetadataApi } from '@salesforce/source-deploy-retrieve/lib/src/client/metadataApi';
+import { ToolingApi } from '@salesforce/source-deploy-retrieve/lib/src/client/toolingApi';
 import { expect } from 'chai';
 import * as path from 'path';
-import { ForceSourceDeploySourcePathExecutor } from '../../../src/commands/forceSourceDeploySourcePath';
+import { createSandbox, SinonSandbox } from 'sinon';
+import {
+  ForceSourceDeploySourcePathExecutor,
+  LibraryDeploySourcePathExecutor
+} from '../../../src/commands';
 import { nls } from '../../../src/messages';
+import { SfdxProjectConfig } from '../../../src/sfdxProject';
+import { OrgAuthInfo } from '../../../src/util';
 
 describe('Force Source Deploy Using Sourcepath Option', () => {
   it('Should build the source deploy command for', () => {
@@ -22,5 +33,95 @@ describe('Force Source Deploy Using Sourcepath Option', () => {
     expect(sourceDeployCommand.description).to.equal(
       nls.localize('force_source_deploy_text')
     );
+  });
+
+  describe('Source Deploy Beta', () => {
+    // Setup the test environment.
+    const $$ = testSetup();
+    const testData = new MockTestOrgData();
+
+    let mockConnection: Connection;
+    let sb: SinonSandbox;
+
+    beforeEach(async () => {
+      sb = createSandbox();
+      $$.setConfigStubContents('AuthInfoConfig', {
+        contents: await testData.getConfig()
+      });
+      mockConnection = await Connection.create({
+        authInfo: await AuthInfo.create({
+          username: testData.username
+        })
+      });
+      sb.stub(ConfigAggregator.prototype, 'getPropertyValue')
+        .withArgs('defaultusername')
+        .returns(testData.username);
+    });
+
+    afterEach(() => {
+      $$.SANDBOX.restore();
+      sb.restore();
+    });
+
+    it('should get the namespace value from sfdx-project.json and deploy using tooling API', async () => {
+      sb.stub(OrgAuthInfo, 'getDefaultUsernameOrAlias').returns(
+        testData.username
+      );
+      sb.stub(OrgAuthInfo, 'getConnection').returns(mockConnection);
+      const getNamespace = sb
+        .stub(SfdxProjectConfig, 'getValue')
+        .returns('diFf');
+      const getComponentsStub = sb.stub(
+        RegistryAccess.prototype,
+        'getComponentsFromPath'
+      );
+      const executor = new LibraryDeploySourcePathExecutor();
+      const filePath = path.join(
+        'test',
+        'file',
+        'path',
+        'classes',
+        'apexTest.cls'
+      );
+      const mockToolingDeploy = sb
+        .stub(ToolingApi.prototype, `deploy`)
+        .resolves('');
+      await executor.execute({ type: 'CONTINUE', data: filePath });
+      expect(mockToolingDeploy.calledOnce).to.equal(true);
+
+      // tslint:disable-next-line:no-unused-expression
+      expect(getComponentsStub.calledWith(filePath)).to.be.true;
+      expect(getNamespace.calledOnce).to.equal(true);
+      // NOTE: There's currently a limitation on source deploy retrieve that prevents
+      // us from mocking SourceClient.tooling.deploy. We'll look into updating the library and this test.
+    });
+
+    it('should get the namespace value from sfdx-project.json and deploy using metadata API', async () => {
+      sb.stub(OrgAuthInfo, 'getDefaultUsernameOrAlias').returns(
+        testData.username
+      );
+      sb.stub(OrgAuthInfo, 'getConnection').returns(mockConnection);
+      const getNamespace = sb.stub(SfdxProjectConfig, 'getValue').returns('');
+      const getComponentsStub = sb.stub(
+        RegistryAccess.prototype,
+        'getComponentsFromPath'
+      );
+      const executor = new LibraryDeploySourcePathExecutor();
+      const filePath = path.join(
+        'test',
+        'file',
+        'path',
+        'classes',
+        'apexTest.cls'
+      );
+      const mockToolingDeploy = sb
+        .stub(MetadataApi.prototype, `deploy`)
+        .resolves('');
+      await executor.execute({ type: 'CONTINUE', data: filePath });
+      expect(mockToolingDeploy.calledOnce).to.equal(true);
+      // tslint:disable-next-line:no-unused-expression
+      expect(getComponentsStub.calledWith(filePath)).to.be.true;
+      expect(getNamespace.calledOnce).to.equal(true);
+    });
   });
 });

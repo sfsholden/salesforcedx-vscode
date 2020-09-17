@@ -4,9 +4,9 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-
+import { ExecuteAnonymousResponse } from '@salesforce/apex-node';
 import { ForceSourceDeployErrorResponse } from '@salesforce/salesforcedx-utils-vscode/out/src/cli';
-import { DeployResult } from '@salesforce/source-deploy-retrieve';
+import { SourceDeployResult } from '@salesforce/source-deploy-retrieve';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -81,41 +81,84 @@ export function handleDiagnosticErrors(
   return errorCollection;
 }
 
-export function handleLibraryDiagnostics(
-  deployResult: DeployResult,
+export function handleDeployRetrieveLibraryDiagnostics(
+  deployResult: SourceDeployResult,
   errorCollection: vscode.DiagnosticCollection
 ): vscode.DiagnosticCollection {
   errorCollection.clear();
+
   const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 
-  deployResult.DeployDetails!.componentFailures.forEach(err => {
+  if (deployResult.components) {
+    for (const deployment of deployResult.components) {
+      for (const diagnostic of deployment.diagnostics) {
+        const {
+          message,
+          lineNumber,
+          columnNumber,
+          type,
+          filePath
+        } = diagnostic;
+        const range = getRange(
+          lineNumber ? lineNumber.toString() : '1',
+          columnNumber ? columnNumber.toString() : '1'
+        );
+        const severity =
+          type === 'Error'
+            ? vscode.DiagnosticSeverity.Error
+            : vscode.DiagnosticSeverity.Warning;
+        const vscDiagnostic: vscode.Diagnostic = {
+          message,
+          range,
+          severity,
+          source: filePath
+        };
+
+        if (filePath) {
+          if (!diagnosticMap.has(filePath)) {
+            diagnosticMap.set(filePath, []);
+          }
+          diagnosticMap.get(filePath)!.push(vscDiagnostic);
+        }
+      }
+    }
+  }
+
+  diagnosticMap.forEach((diagnostics, file) =>
+    errorCollection.set(vscode.Uri.file(file), diagnostics)
+  );
+
+  return errorCollection;
+}
+
+export function handleApexLibraryDiagnostics(
+  apexResult: ExecuteAnonymousResponse,
+  errorCollection: vscode.DiagnosticCollection,
+  filePath: string
+) {
+  errorCollection.clear();
+  if (apexResult.diagnostic) {
     const range = getRange(
-      err.lineNumber ? err.lineNumber.toString() : '1',
-      err.columnNumber ? err.columnNumber.toString() : '1'
+      apexResult.diagnostic[0].lineNumber
+        ? apexResult.diagnostic[0].lineNumber.toString()
+        : '1',
+      apexResult.diagnostic[0].columnNumber
+        ? apexResult.diagnostic[0].columnNumber.toString()
+        : '1'
     );
 
     const diagnostic = {
-      message: err.problem,
+      message:
+        typeof apexResult.diagnostic[0].compileProblem === 'string'
+          ? apexResult.diagnostic[0].compileProblem
+          : apexResult.diagnostic[0].exceptionMessage,
       severity: vscode.DiagnosticSeverity.Error,
-      source: err.fileName,
+      source: filePath,
       range
     } as vscode.Diagnostic;
 
-    // NOTE: This is a workaround while we fix DeployResults not providing full
-    // path info
-    const fileUri = deployResult.metadataFile.replace('-meta.xml', '');
-
-    if (!diagnosticMap.has(fileUri)) {
-      diagnosticMap.set(fileUri, []);
-    }
-
-    diagnosticMap.get(fileUri)!.push(diagnostic);
-  });
-
-  diagnosticMap.forEach((diagMap: vscode.Diagnostic[], file) => {
-    const fileUri = vscode.Uri.file(file);
-    errorCollection.set(fileUri, diagMap);
-  });
+    errorCollection.set(vscode.Uri.file(filePath), [diagnostic]);
+  }
 
   return errorCollection;
 }

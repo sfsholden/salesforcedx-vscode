@@ -37,6 +37,9 @@ parameters:
   create-release:
     type: boolean
     default: false
+  cache-version:
+    type: string
+    default: 'dependency-cache-v4-'
 
 commands:
   compile:
@@ -104,7 +107,7 @@ commands:
     parameters:
       production-branch:
         type: string
-        default: 'master'
+        default: 'main'
       develop-branch:
         type: string
         default: 'develop'
@@ -133,7 +136,7 @@ commands:
     parameters:
       base-cache-path:
         type: string
-        default: 'dependency-cache-v2-'
+        default: << pipeline.parameters.cache-version >>
     steps:
       - restore_cache:
           keys:
@@ -145,7 +148,7 @@ commands:
     parameters:
       base-cache-path:
         type: string
-        default: 'dependency-cache-v2-'
+        default: << pipeline.parameters.cache-version >>
       path-to-save:
         type: string
         default: 'node_modules'
@@ -190,7 +193,7 @@ commands:
           name: 'Adding the SHA256 to git.'
           command: |
             git add SHA256.md
-            git commit -m "[skip ci] Updated SHA256"
+            git commit -m "Updated SHA256 v${RELEASE_VERSION}"
 
   build-artifacts:
     description: 'Building and archiving extension artifacts.'
@@ -209,7 +212,7 @@ commands:
       - run: git config --global core.autocrlf false
       - checkout
       - restore_dependency_cache:
-          base-cache-path: 'dependency-cache-win3-'
+          base-cache-path: << pipeline.parameters.cache-version >>-win
       - run:
           name: 'Install node'
           shell: bash.exe
@@ -231,7 +234,7 @@ commands:
           shell: bash.exe
           command: npm run compile
       - save_dependency_cache:
-          base-cache-path: 'dependency-cache-win3-'
+          base-cache-path: << pipeline.parameters.cache-version >>-win
       - run:
           name: 'Run lint'
           shell: bash.exe
@@ -358,49 +361,47 @@ jobs:
     executor: << parameters.e >>
     steps:
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#FFDEAD'
-          message: 'TESTING - Starting release for VSCode Extensions'
+          message: 'Starting publish for VSCode Extensions'
       - ssh-config
-      - merge-release-branch
       - checkout
-      - restore_dependency_cache
-      #- run:
-      #    name: 'Setup gus case management'
-      #    command: |
-      #      sudo npm install -g @salesforce/change-case-management
-      #- sfchangecase/install
       - gus-prepare-environment-variables
-      #- sfchangecase/create:
-      #    location: REPO_LOCATION
-      #    release: GUS_RELEASE
-      #- sfchangecase/check:
-      #    location: REPO_LOCATION
-      #    release: GUS_RELEASE
+      - restore_dependency_cache
+      # - run:
+      #     name: 'Setup gus case management'
+      #     command: |
+      #       sudo npm install -g @salesforce/change-case-management
+      # - sfchangecase/create:
+      #     location: REPO_LOCATION
+      #     release: GUS_RELEASE
+      # - sfchangecase/check:
+      #     location: REPO_LOCATION
+      #     release: GUS_RELEASE
       - gh-config
       - install
       - compile
-      - package-extensions
-      #- updating-sha-for-publish
-      #- run:
-      #    name: 'Publishing to the VS Code Marketplace.'
-      #    command: npm run vscode:publish
-      #- stage-and-store-artifacts
-      #- run:
-      #    name: 'Create git tag (e.g. v48.1.0) & push changes back to master branch'
-      #    command: |
-      #      git tag v${GUS_BUILD}
-      #      git push origin v${GUS_BUILD}
-      #      git push origin master
-      #- sfchangecase/update:
-      #    location: REPO_LOCATION
-      #    release: GUS_RELEASE
+      # - package-extensions
+      # - updating-sha-for-publish
+      # - run:
+      #     name: 'Publishing to the VS Code Marketplace.'
+      #     command: npm run vscode:publish
+      # - stage-and-store-artifacts
+      - run:
+          name: 'Create git tag (e.g. v48.1.0) & push changes back to main branch'
+          command: |
+            git tag v${RELEASE_VERSION}
+            git push origin v${RELEASE_VERSION}
+            git push origin main
+      # - sfchangecase/update:
+      #     location: REPO_LOCATION
+      #     release: GUS_RELEASE
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#9bcd9b'
-          message: 'TESTING - VSCode Extensions v${RELEASE_VERSION} have been published to the marketplace'
+          message: 'TEST - VSCode Extensions v${RELEASE_VERSION} have been published to the marketplace'
       - slack/status:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           fail_only: true
 
   create-release-branch:
@@ -410,9 +411,9 @@ jobs:
     executor: << parameters.e >>
     steps:
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#FFDEAD'
-          message: 'TESTING - Starting creation of release branch for VSCode Extensions'
+          message: 'TEST - Starting creation of release branch for VSCode Extensions'
       - ssh-config
       - checkout
       - restore_dependency_cache
@@ -427,11 +428,11 @@ jobs:
             git branch
             scripts/create-release-branch.js
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#d8bfd8'
-          message: 'TESTING - VSCode Extensions release branch has been cut'
+          message: 'TEST - VSCode Extensions release branch has been cut'
       - slack/status:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           fail_only: true
 
 workflows:
@@ -445,53 +446,67 @@ workflows:
         - not: << pipeline.parameters.create-release >>
     jobs:
       - build-all
-      - unit-tests
-      #- integration-tests
+      # - unit-tests
+      # - integration-tests
 
   publish-workflow:
     when: << pipeline.parameters.publish >>
     jobs:
       - slack/approval-notification:
-          message: Pending Approval for Publish
-          channel: 'pdt_releases'
+          message: TEST - Pending Approval for Publish
+          channel: 'shelbys-test-channel'
           color: '#0E1111'
-      #- build-all
-      #- unit-tests
-      #- integration-tests
+      - build-all
+      # - unit-tests
+      # - integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - publish:
           e: default-executor
           requires:
-            #- build-all
-            #- unit-tests
-            #- integration-tests
+            - build-all
+            # - unit-tests
+            # - integration-tests
             - hold
           filters:
             branches:
               only:
-                - master
+                - main
 
   create-release-branch-workflow:
     when: << pipeline.parameters.create-release >>
     jobs:
       - slack/approval-notification:
-          message: Pending Approval for Creation of Release Branch
-          channel: 'pdt_releases'
+          message: TEST - Pending Approval for Creation of Release Branch
+          channel: 'shelbys-test-channel'
           color: '#0E1111'
-      #- build-all
-      #- unit-tests
-      #- integration-tests
+      - build-all
+      # - unit-tests
+      # - integration-tests
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - create-release-branch:
           e: default-executor
           requires:
-            #- build-all
-            #- unit-tests
-            #- integration-tests
+            - build-all
+            # - unit-tests
+            # - integration-tests
             - hold
           filters:
             branches:
               only:
                 - develop
+  # run a build/test every mid-night
+  # scheduled-workflow:
+  #   triggers:
+  #     - schedule:
+  #         cron: '0 0 * * *'
+  #         filters:
+  #           branches:
+  #             only:
+  #               - develop
+  #               - main
+  #   jobs:
+  #     - build-all
+  #     - unit-tests
+  #     - integration-tests

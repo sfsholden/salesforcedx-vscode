@@ -17,7 +17,7 @@ Keeping your code consistent and nicely formatted is important in any programmin
 
 <https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode>
 
-> NOTE: Unfortunately, Prettier doesn’t support Apex (a member of the community is [working on it](https://github.com/dangmai/prettier-plugin-apex) though).
+> NOTE: Prettier also supports Apex formatting through the [Prettier Apex plugin](https://github.com/dangmai/prettier-plugin-apex).
 
 ## XML
 
@@ -36,3 +36,7 @@ This extension makes working with GitHub even easier.
 Supercharge the Git capabilities built into VS Code: Visualize code authorship at a glance via Git blame annotations and code lenses, navigate and explore Git repositories, gain valuable insights via powerful comparison commands, and more.
 
 <https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens>
+
+## Community Extensions
+
+The community has developed several extensions to help make Salesforce development more productive. To find these, search the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/vscode) or browse all extensions tagged [Salesforce](https://marketplace.visualstudio.com/search?term=tag%3Asalesforce&target=VSCode&category=All%20categories&sortBy=Relevance).

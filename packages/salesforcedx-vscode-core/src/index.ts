@@ -4,7 +4,6 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-
 import * as vscode from 'vscode';
 import { channelService } from './channels';
 import {
@@ -22,6 +21,10 @@ import {
   forceConfigSet,
   forceDataSoqlQuery,
   forceDebuggerStop,
+  forceFunctionCreate,
+  forceFunctionInvoke,
+  forceFunctionStart,
+  forceFunctionStop,
   forceInternalLightningAppCreate,
   forceInternalLightningComponentCreate,
   forceInternalLightningEventCreate,
@@ -34,7 +37,9 @@ import {
   forceLightningLwcCreate,
   forceLightningLwcTestCreate,
   forceOrgCreate,
+  forceOrgDelete,
   forceOrgDisplay,
+  forceOrgList,
   forceOrgOpen,
   forcePackageInstall,
   forceProjectWithManifestCreate,
@@ -55,11 +60,12 @@ import {
   forceTaskStop,
   forceVisualforceComponentCreate,
   forceVisualforcePageCreate,
+  registerFunctionInvokeCodeLensProvider,
   turnOffLogging
 } from './commands';
 import { RetrieveMetadataTrigger } from './commands/forceSourceRetrieveMetadata';
 import { getUserId } from './commands/forceStartApexDebugLogging';
-import { isvDebugBootstrap } from './commands/isvdebugging/bootstrapCmd';
+import { isvDebugBootstrap } from './commands/isvdebugging';
 import {
   CompositeParametersGatherer,
   EmptyParametersGatherer,
@@ -242,6 +248,15 @@ function registerCommands(
     'sfdx.force.alias.list',
     forceAliasList
   );
+  const forceOrgDeleteDefaultCmd = vscode.commands.registerCommand(
+    'sfdx.force.org.delete.default',
+    forceOrgDelete
+  );
+  const forceOrgDeleteUsernameCmd = vscode.commands.registerCommand(
+    'sfdx.force.org.delete.username',
+    forceOrgDelete,
+    { flag: '--targetusername' }
+  );
   const forceOrgDisplayDefaultCmd = vscode.commands.registerCommand(
     'sfdx.force.org.display.default',
     forceOrgDisplay
@@ -250,6 +265,10 @@ function registerCommands(
     'sfdx.force.org.display.username',
     forceOrgDisplay,
     { flag: '--targetusername' }
+  );
+  const forceOrgListCleanCmd = vscode.commands.registerCommand(
+    'sfdx.force.org.list.clean',
+    forceOrgList
   );
   const forceDataSoqlQueryInputCmd = vscode.commands.registerCommand(
     'sfdx.force.data.soql.query.input',
@@ -321,6 +340,26 @@ function registerCommands(
     forceSourceDiff
   );
 
+  const forceFunctionCreateCmd = vscode.commands.registerCommand(
+    'sfdx.force.function.create',
+    forceFunctionCreate
+  );
+
+  const forceFunctionStartCmd = vscode.commands.registerCommand(
+    'sfdx.force.function.start',
+    forceFunctionStart
+  );
+
+  const forceFunctionInvokeCmd = vscode.commands.registerCommand(
+    'sfdx.force.function.invoke',
+    forceFunctionInvoke
+  );
+
+  const forceFunctionStopCmd = vscode.commands.registerCommand(
+    'sfdx.force.function.stop',
+    forceFunctionStop
+  );
+
   return vscode.Disposable.from(
     forceApexExecuteDocumentCmd,
     forceApexExecuteSelectionCmd,
@@ -331,6 +370,10 @@ function registerCommands(
     forceDataSoqlQueryInputCmd,
     forceDataSoqlQuerySelectionCmd,
     forceDiffFile,
+    forceFunctionCreateCmd,
+    forceFunctionInvokeCmd,
+    forceFunctionStartCmd,
+    forceFunctionStopCmd,
     forceOrgCreateCmd,
     forceOrgOpenCmd,
     forceSourceDeleteCmd,
@@ -497,6 +540,14 @@ export async function activate(context: vscode.ExtensionContext) {
     return internalApi;
   }
 
+  // Set functions enabled context
+  const functionsEnabled = sfdxCoreSettings.getFunctionsEnabled();
+  vscode.commands.executeCommand(
+    'setContext',
+    'sfdx:functions_enabled',
+    functionsEnabled
+  );
+
   // Context
   let sfdxProjectOpened = false;
   if (hasRootWorkspace()) {
@@ -580,6 +631,8 @@ export async function activate(context: vscode.ExtensionContext) {
     taskViewService,
     telemetryService
   };
+
+  registerFunctionInvokeCodeLensProvider(context);
 
   telemetryService.sendExtensionActivationEvent(extensionHRStart);
   console.log('SFDX CLI Extension Activated');

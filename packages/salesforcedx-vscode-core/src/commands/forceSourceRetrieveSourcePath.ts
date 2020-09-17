@@ -14,28 +14,22 @@ import {
   CancelResponse,
   ContinueResponse
 } from '@salesforce/salesforcedx-utils-vscode/out/src/types/index';
-import {
-  RegistryAccess,
-  registryData
-} from '@salesforce/source-deploy-retrieve';
+import { RegistryAccess } from '@salesforce/source-deploy-retrieve';
 import * as vscode from 'vscode';
 import { channelService } from '../channels';
 import { nls } from '../messages';
 import { notificationService } from '../notifications';
-import { sfdxCoreSettings } from '../settings';
-import { SfdxPackageDirectories } from '../sfdxProject';
+import { SfdxPackageDirectories, SfdxProjectConfig } from '../sfdxProject';
 import { telemetryService } from '../telemetry';
 import {
+  createComponentCount,
+  DeployRetrieveLibraryExecutor,
   FilePathGatherer,
   SfdxCommandlet,
   SfdxCommandletExecutor,
-  SfdxWorkspaceChecker
-} from './util';
-import {
-  createComponentCount,
+  SfdxWorkspaceChecker,
   useBetaDeployRetrieve
-} from './util/betaDeployRetrieve';
-import { LibraryCommandletExecutor } from './util/libraryCommandlet';
+} from './util';
 
 export class ForceSourceRetrieveSourcePathExecutor extends SfdxCommandletExecutor<
   string
@@ -116,9 +110,7 @@ export async function forceSourceRetrieveSourcePath(explorerPath: vscode.Uri) {
   await commandlet.run();
 }
 
-export class LibraryRetrieveSourcePathExecutor extends LibraryCommandletExecutor<
-  string
-> {
+export class LibraryRetrieveSourcePathExecutor extends DeployRetrieveLibraryExecutor {
   public async execute(response: ContinueResponse<string>): Promise<void> {
     this.setStartTime();
 
@@ -136,10 +128,14 @@ export class LibraryRetrieveSourcePathExecutor extends LibraryCommandletExecutor
         this.sourceClient.tooling.retrieve
       );
 
+      const projectNamespace = (await SfdxProjectConfig.getValue(
+        'namespace'
+      )) as string;
       const registryAccess = new RegistryAccess();
       const components = registryAccess.getComponentsFromPath(response.data);
       const retrievePromise = this.sourceClient.tooling.retrieve({
-        components
+        components,
+        namespace: projectNamespace
       });
       const metadataCount = JSON.stringify(createComponentCount(components));
       await retrievePromise;

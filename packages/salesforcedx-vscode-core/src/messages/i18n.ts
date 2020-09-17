@@ -65,8 +65,7 @@ export const messages = {
     'Select scratch definition file. Matched files with format: "config/**/*-scratch-def.json"',
   parameter_gatherer_enter_scratch_org_expiration_days:
     'Enter the number of days (1–30) until scratch org expiration or use the default value (7)',
-  parameter_gatherer_enter_package_id:
-    'Enter the ID of the package to install',
+  parameter_gatherer_enter_package_id: 'Enter the ID of the package to install',
   parameter_gatherer_enter_installation_key_if_necessary:
     'Enter the installation key, if required, or leave the field blank',
   parameter_gatherer_enter_project_name: 'Enter project name',
@@ -75,6 +74,15 @@ export const messages = {
     'forceide:// URL from Setup',
   parameter_gatherer_invalid_forceide_url:
     "The forceide:// URL is invalid. From your subscriber's org, copy and paste the forceide:// URL shown on the Apex Debugger page in Setup.",
+  parameter_gatherer_enter_function: 'Enter function details',
+  parameter_gatherer_prompt_confirm_option: 'Continue',
+  parameter_gatherer_prompt_cancel_option: 'Cancel',
+  parameter_gatherer_placeholder_org_list_clean:
+    'Confirm to continue removing deleted and expired scratch orgs',
+  parameter_gatherer_placeholder_delete_selected_org:
+    'Confirm to continue deleting the selected org',
+  parameter_gatherer_placeholder_delete_default_org:
+    'Confirm to continue deleting the default org',
 
   force_org_create_default_scratch_org_text:
     'SFDX: Create a Default Scratch Org...',
@@ -136,6 +144,17 @@ export const messages = {
   force_lightning_component_create_text: 'SFDX: Create Aura Component',
   force_lightning_event_create_text: 'SFDX: Create Aura Event',
   force_lightning_interface_create_text: 'SFDX: Create Aura Interface',
+  force_function_create_text: 'SFDX: Create Function',
+  force_function_start_text: 'SFDX: Start Function',
+  force_function_start_warning_no_toml:
+    'No function.toml found. Create a function.toml, or create a new function using SFDX: Create Function.',
+  force_function_start_warning_not_in_function_folder:
+    'Open a function file to run SFDX: Start Function',
+  force_function_invoke_text: 'SFDX: Invoke Function',
+  force_function_invoke_tooltip: 'Send Request',
+  force_function_stop_text: 'SFDX: Stop Function',
+  force_function_stop_in_progress: 'Stopping Function',
+  force_function_stop_not_started: 'No Function is running locally',
   force_source_status_local_text: 'SFDX: View Local Changes',
   force_source_status_remote_text: 'SFDX: View Changes in Default Scratch Org',
   warning_prompt_file_overwrite:
@@ -154,8 +173,11 @@ export const messages = {
   warning_prompt_other_not_shown: '...%s other components not shown\n',
   force_config_list_text: 'SFDX: List All Config Variables',
   force_alias_list_text: 'SFDX: List All Aliases',
+  force_org_delete_default_text: 'SFDX: Delete Default Org',
+  force_org_delete_username_text: 'SFDX: Delete Org...',
   force_org_display_default_text: 'SFDX: Display Org Details for Default Org',
   force_org_display_username_text: 'SFDX: Display Org Details...',
+  force_org_list_clean_text: 'SFDX: Remove Deleted and Expired Orgs',
   force_debugger_query_session_text: 'query for Apex Debugger session',
   force_debugger_stop_text: 'SFDX: Stop Apex Debugger Session',
   force_debugger_stop_none_found_text: 'No Apex Debugger session found.',
@@ -176,6 +198,8 @@ export const messages = {
   force_project_create_analytics_template_display_text: 'Analytics',
   force_project_create_empty_template: 'Empty project template',
   force_project_create_analytics_template: 'Analytics project template',
+  force_project_create_functions_template_display_text: 'Functions',
+  force_project_create_functions_template: 'Functions project template',
   force_apex_trigger_create_text: 'SFDX: Create Apex Trigger',
   force_start_apex_debug_logging:
     'SFDX: Turn On Apex Debug Log for Replay Debugger',
@@ -203,13 +227,14 @@ export const messages = {
     'SFDX: ISV Debugger Setup, Step 7 of 7: Converting package: %s',
   isv_debug_bootstrap_processing_package: 'Processing package: %s',
   isv_debug_bootstrap_generate_launchjson: 'Creating launch configuration',
-  isv_debug_bootstrap_open_project:
-    'Opening project in new Visual Studio Code window',
+  isv_debug_bootstrap_open_project: 'Opening project in Visual Studio Code',
 
   force_apex_log_get_text: 'SFDX: Get Apex Debug Logs...',
   force_apex_log_get_no_logs_text: 'No Apex debug logs were found',
   force_apex_log_get_pick_log_text: 'Pick an Apex debug log to get',
   force_apex_log_list_text: 'Getting Apex debug logs',
+  force_apex_log_get_library: 'Apex Library: Get Logs',
+  apex_log_get_text: 'Get Apex Logs',
 
   error_creating_packagexml: 'Error creating package.xml. %s',
   error_extracting_org_source: 'Error extracting downloaded Apex source. %s',
@@ -255,6 +280,7 @@ export const messages = {
   error_source_path_not_in_package_directory_text:
     'Error deploying or retrieving source: The file or directory that you tried to deploy or retrieve isn\'t in a package directory that\'s specified in your sfdx-project.json file. Add this location to your "packageDirectories" value, or deploy or retrieve a different file or directory. For details about sfdx-project.json, see: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm',
   org_select_text: 'Select an org to set as default',
+  org_expired: 'Expired',
   missing_default_org: 'No Default Org Set',
   force_config_set_org_text: 'SFDX: Set a Default Org',
   error_parsing_sfdx_project_file:
@@ -301,9 +327,12 @@ export const messages = {
   error_org_browser_init: 'Org Browser has not been initialized',
   error_overwrite_prompt: 'Error checking workspace for existing components',
   error_no_scratch_def:
-    'No scratch definition files found. These files must be in the "config" folder and have file names that end with "-scratch-def.json". See [Scratch Org Definition File](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm) for help.',
+    'No scratch definition files found. These files must be in the "config" folder and end with "-scratch-def.json". See [Scratch Org Definition File](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm) for help.',
   force_list_metadata: 'SFDX: Force List Metadata',
-
+  apex_execute_compile_success: 'Compiled successfully.',
+  apex_execute_runtime_success: 'Executed successfully.',
+  apex_execute_text: 'Execute Anonymous Apex',
+  force_apex_execute_library: 'Apex Library: Execute Anonymous',
   AccessControlPolicy: 'Access Control Policies',
   ActionLinkGroupTemplate: 'Action Link Group Templates',
   AIAssistantTemplate: 'AI Assistant Templates',
@@ -490,6 +519,22 @@ export const messages = {
   WebLink: 'Web Links',
   Workflow: 'Workflows',
   XOrgHub: 'X Org Hubs',
+  LightningMessageChannel: 'Lightning Message Channels',
+  InboundNetworkConnection: 'Inbound Network Connections',
+  OutboundNetworkConnection: 'Outbound Network Connections',
+  MutingPermissionSet: 'Muting Permission Sets',
+  MyDomainDiscoverableLogin: 'MyDomain Discoverable Login',
+  UserProvisioningConfig: 'User Provisioning Configs',
+  ApexEmailNotifications: 'Apex Email Notifications',
+  PlatformEventChannelMember: 'Platform Event Channel Members',
+  CanvasMetadata: 'Canvas Metadatas',
+  MobileApplicationDetail: 'Mobile Application Details',
+  NotificationTypeConfig: 'Notification Type Configs',
+  LightningOnboardingConfig: 'Lightning Onboarding Configs',
+  ManagedContentType: 'Managed Content Types',
+  PaymentGatewayProvider: 'Payment Gateway Providers',
+  EmbeddedServiceMenuSettings: 'Embedded Service Menu Settings',
+  CallCoachingMediaProvider: 'Call Coaching Media Providers',
 
   conflict_detect_error:
     'An error was encountered during conflict detection. %s',
@@ -534,5 +579,9 @@ export const messages = {
     'Not able to parse current results. Raw result: %s',
   package_id_validation_error:
     'Package ID should be a 15 or 18 character Id that starts with 04t',
-  package_id_gatherer_placeholder: '04t...'
+  package_id_gatherer_placeholder: '04t...',
+  force_function_enter_function: 'Enter a name for the function',
+  force_function_enter_language: 'Select a language for your function',
+  force_function_pull_dependencies_error:
+    "%s. Make sure you have NodeJS installed (https://nodejs.org/) and then run 'npm install' to install dependencies from package.json"
 };
