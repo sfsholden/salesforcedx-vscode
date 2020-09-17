@@ -11,7 +11,7 @@ version: 2.1
 
 orbs:
   win: circleci/windows@2.2.0
-  sfchangecase: salesforce/change-case-management@3
+  # sfchangecase: salesforce/change-case-management@3
   slack: circleci/slack@3.4.2
 
 parameters:
@@ -107,7 +107,7 @@ commands:
     parameters:
       production-branch:
         type: string
-        default: 'master'
+        default: 'main'
       develop-branch:
         type: string
         default: 'develop'
@@ -361,47 +361,47 @@ jobs:
     executor: << parameters.e >>
     steps:
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#FFDEAD'
           message: 'Starting publish for VSCode Extensions'
       - ssh-config
       - checkout
       - gus-prepare-environment-variables
       - restore_dependency_cache
-      - run:
-          name: 'Setup gus case management'
-          command: |
-            sudo npm install -g @salesforce/change-case-management
-      - sfchangecase/create:
-          location: REPO_LOCATION
-          release: GUS_RELEASE
-      - sfchangecase/check:
-          location: REPO_LOCATION
-          release: GUS_RELEASE
+      # - run:
+      #     name: 'Setup gus case management'
+      #     command: |
+      #       sudo npm install -g @salesforce/change-case-management
+      # - sfchangecase/create:
+      #     location: REPO_LOCATION
+      #     release: GUS_RELEASE
+      # - sfchangecase/check:
+      #     location: REPO_LOCATION
+      #     release: GUS_RELEASE
       - gh-config
       - install
       - compile
-      - package-extensions
-      - updating-sha-for-publish
-      - run:
-          name: 'Publishing to the VS Code Marketplace.'
-          command: npm run vscode:publish
-      - stage-and-store-artifacts
+      # - package-extensions
+      # - updating-sha-for-publish
+      # - run:
+      #     name: 'Publishing to the VS Code Marketplace.'
+      #     command: npm run vscode:publish
+      # - stage-and-store-artifacts
       - run:
           name: 'Create git tag (e.g. v48.1.0) & push changes back to main branch'
           command: |
             git tag v${RELEASE_VERSION}
             git push origin v${RELEASE_VERSION}
             git push origin main
-      - sfchangecase/update:
-          location: REPO_LOCATION
-          release: GUS_RELEASE
+      # - sfchangecase/update:
+      #     location: REPO_LOCATION
+      #     release: GUS_RELEASE
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#9bcd9b'
-          message: 'VSCode Extensions v${RELEASE_VERSION} have been published to the marketplace'
+          message: 'TEST - VSCode Extensions v${RELEASE_VERSION} have been published to the marketplace'
       - slack/status:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           fail_only: true
 
   create-release-branch:
@@ -411,9 +411,9 @@ jobs:
     executor: << parameters.e >>
     steps:
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#FFDEAD'
-          message: 'Starting creation of release branch for VSCode Extensions'
+          message: 'TEST - Starting creation of release branch for VSCode Extensions'
       - ssh-config
       - checkout
       - restore_dependency_cache
@@ -428,11 +428,11 @@ jobs:
             git branch
             scripts/create-release-branch.js
       - slack/notify:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           color: '#d8bfd8'
-          message: 'TESTING - VSCode Extensions release branch has been cut'
+          message: 'TEST - VSCode Extensions release branch has been cut'
       - slack/status:
-          channel: 'pdt_releases'
+          channel: 'shelbys-test-channel'
           fail_only: true
 
 workflows:
@@ -453,8 +453,8 @@ workflows:
     when: << pipeline.parameters.publish >>
     jobs:
       - slack/approval-notification:
-          message: Pending Approval for Publish
-          channel: 'pdt_releases'
+          message: TEST - Pending Approval for Publish
+          channel: 'shelbys-test-channel'
           color: '#0E1111'
       - build-all
       - unit-tests
@@ -477,8 +477,8 @@ workflows:
     when: << pipeline.parameters.create-release >>
     jobs:
       - slack/approval-notification:
-          message: Pending Approval for Creation of Release Branch
-          channel: 'pdt_releases'
+          message: TEST - Pending Approval for Creation of Release Branch
+          channel: 'shelbys-test-channel'
           color: '#0E1111'
       - build-all
       - unit-tests
