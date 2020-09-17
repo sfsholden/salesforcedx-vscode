@@ -496,18 +496,17 @@ workflows:
             branches:
               only:
                 - develop
-
   # run a build/test every mid-night
-  scheduled-workflow:
-    triggers:
-      - schedule:
-          cron: '0 0 * * *'
-          filters:
-            branches:
-              only:
-                - develop
-                - main
-    jobs:
-      - build-all
-      - unit-tests
-      - integration-tests
+  # scheduled-workflow:
+  #   triggers:
+  #     - schedule:
+  #         cron: '0 0 * * *'
+  #         filters:
+  #           branches:
+  #             only:
+  #               - develop
+  #               - main
+  #   jobs:
+  #     - build-all
+  #     - unit-tests
+  #     - integration-tests
