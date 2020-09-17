@@ -65,6 +65,8 @@
   },
   "license": "BSD-3-Clause",
   "dependencies": {
+    "@actions/core": "^1.2.2",
+    "@actions/github": "^2.1.0",
     "node": "12.4.0",
     "npm": "^6.9.0"
   },

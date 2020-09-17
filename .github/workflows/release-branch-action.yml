@@ -1,0 +1,38 @@
+name: Release Branch Listener
+
+on:
+  push:
+    # Only listen for pull requests against release branches
+    branches:
+      - 'release/v**.**.*' # Push events to branches matching example format refs/heads/release/v17.10.0
+    tags-ignore:
+      - IgnoreInChangelog # Do not run these steps if the Pull Request has the tag 'IgnoreInChangelog'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node_version: [12.4]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Checkout branch history
+        run: |
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install
+        run: npm install shelljs
+
+      - name: Build the CHANGELOG
+        run: node scripts/change-log-generator.js -v -r ${GITHUB_REF##*/release/v}
