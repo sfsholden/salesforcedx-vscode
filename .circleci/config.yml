@@ -430,6 +430,12 @@ jobs:
       # - sfchangecase/update:
       #     location: REPO_LOCATION
       #     release: GUS_RELEASE
+      - run:
+          name: 'Merge changes from main back into develop'
+          command: |
+            git checkout develop
+            git merge main
+            git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#9bcd9b'
