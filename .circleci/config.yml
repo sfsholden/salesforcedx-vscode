@@ -15,6 +15,7 @@ orbs:
   slack: circleci/slack@3.4.2
 
 parameters:
+  # Versions
   cli-version:
     type: string
     default: '7.45.1'
@@ -24,6 +25,7 @@ parameters:
   lerna-version:
     type: string
     default: '3.13.1'
+  # Constants
   domain-retry:
     description: 'SFDX Domain Retry Wait in Seconds'
     type: integer
@@ -31,15 +33,19 @@ parameters:
   fingerprint:
     type: string
     default: 'dc:00:e0:c3:28:59:ad:c1:01:49:9f:d5:88:b3:17:da'
+  cache-version:
+    type: string
+    default: 'dependency-cache-v4-'
+  # Workflow Triggers
   publish:
     type: boolean
     default: false
   create-release:
     type: boolean
     default: false
-  cache-version:
-    type: string
-    default: 'dependency-cache-v4-'
+  prep-release:
+    type: boolean
+    default: false
 
 commands:
   compile:
@@ -77,6 +83,19 @@ commands:
             git config user.email "<< parameters.gh_email >>"
             git config user.name "<< parameters.gh_username >>"
 
+  prepare-release-env-variables:
+    parameters:
+      package-json-path:
+        type: string
+        default: './packages/salesforcedx-vscode/package.json'
+    steps:
+      - run:
+          name: 'Prepare release branch environment variable'
+          command: |
+            echo "export RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
+            source $BASH_ENV
+            echo "RELEASE_VERSION is: ${RELEASE_VERSION}"
+
   gus-prepare-environment-variables:
     parameters:
       package-json-path:
@@ -86,14 +105,13 @@ commands:
         type: string
         default: 'offcore.tooling'
     steps:
+      - prepare-release-env-variables
       - run:
           name: 'Prepare environment variables for GUS Change Case Management'
           command: |
-            export GUS_BUILD="$(node -pe "require('<< parameters.package-json-path >>').version")"
-            echo "export RELEASE_VERSION=$GUS_BUILD" >> $BASH_ENV
+            export GUS_BUILD=$RELEASE_VERSION
             echo "export GUS_RELEASE=<< parameters.release-tag-name >>.$GUS_BUILD" >> $BASH_ENV
             source $BASH_ENV
-            echo "RELEASE_VERSION is: ${RELEASE_VERSION}"
             echo "GUS_RELEASE is: ${GUS_RELEASE}"
 
   install:
@@ -240,6 +258,22 @@ commands:
           shell: bash.exe
           command: |
             npm run lint
+
+  merge-validation:
+    description: 'Verify the changes to merge are not present in main'
+    parameters:
+      package-json-path:
+        type: string
+        default: './packages/salesforcedx-vscode/package.json'
+    steps:
+      - run:
+          name: 'Prepare main release version'
+          command: |
+            git checkout main
+            echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
+            source $BASH_ENV
+            echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
+      #- TODO - verify that the release branch is not already present in main.
 
 executors:
   default-executor:
@@ -435,6 +469,29 @@ jobs:
           channel: 'shelbys-test-channel'
           fail_only: true
 
+  merge-release-branch:
+    - slack/notify:
+        channel: 'shelbys-test-channel'
+        color: '#FFDEAD'
+        message: 'TEST - Merging latest release branch into main'
+    - ssh-config
+    - checkout
+    - prepare-release-env-variables
+    - merge-validation
+    - run:
+        command: |
+          git checkout main
+          echo "Rebasing main off of release branch ${RELEASE_VERSION}"
+          git rebase release/v${RELEASE_VERSION}
+          git push
+    - slack/notify:
+        channel: 'shelbys-test-channel'
+        color: '#d8bfd8'
+        message: 'TEST - Main should now be rebased off of the release branch ${RELEASE_VERSION}'
+    - slack/status:
+        channel: 'shelbys-test-channel'
+        fail_only: true
+
 workflows:
   version: 2.1
 
@@ -443,6 +500,7 @@ workflows:
     when:
       and:
         - not: << pipeline.parameters.publish >>
+        - not: << pipeline.parameters.prep-release >>
         - not: << pipeline.parameters.create-release >>
     jobs:
       - build-all
@@ -472,6 +530,25 @@ workflows:
             branches:
               only:
                 - main
+
+  prep-publish-workflow:
+    when: << pipeline.parameters.prep-release >>
+    jobs:
+      - slack/approval-notification:
+        message: TEST - Pending Approval for rebase of release branch into main
+        channel: 'shelbys-test-channel'
+        color: '#0E1111'
+      - build-all
+      - hold: # Requires manual approval in Circle Ci
+          type: approval
+      - merge-release-branch
+          requires:
+            - build-all
+            - hold
+          filters:
+            branches:
+              only:
+                - /^release/v.*/
 
   create-release-branch-workflow:
     when: << pipeline.parameters.create-release >>
