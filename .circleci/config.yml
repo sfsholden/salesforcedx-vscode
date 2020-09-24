@@ -476,27 +476,32 @@ jobs:
           fail_only: true
 
   merge-release-branch:
-    - slack/notify:
-        channel: 'shelbys-test-channel'
-        color: '#FFDEAD'
-        message: 'TEST - Merging latest release branch into main'
-    - ssh-config
-    - checkout
-    - prepare-release-env-variables
-    - merge-validation
-    - run:
-        command: |
-          git checkout main
-          echo "Rebasing main off of release branch ${RELEASE_VERSION}"
-          git rebase release/v${RELEASE_VERSION}
-          git push
-    - slack/notify:
-        channel: 'shelbys-test-channel'
-        color: '#d8bfd8'
-        message: 'TEST - Main should now be rebased off of the release branch ${RELEASE_VERSION}'
-    - slack/status:
-        channel: 'shelbys-test-channel'
-        fail_only: true
+    parameters:
+      e:
+        type: executor
+    executor: << parameters.e >>
+    steps:
+      - slack/notify:
+          channel: 'shelbys-test-channel'
+          color: '#FFDEAD'
+          message: 'TEST - Merging latest release branch into main'
+      - ssh-config
+      - checkout
+      - prepare-release-env-variables
+      - merge-validation
+      - run:
+          command: |
+            git checkout main
+            echo "Rebasing main off of release branch ${RELEASE_VERSION}"
+            git rebase release/v${RELEASE_VERSION}
+            git push
+      - slack/notify:
+          channel: 'shelbys-test-channel'
+          color: '#d8bfd8'
+          message: 'TEST - Main should now be rebased off of the release branch ${RELEASE_VERSION}'
+      - slack/status:
+          channel: 'shelbys-test-channel'
+          fail_only: true
 
 workflows:
   version: 2.1
@@ -541,13 +546,14 @@ workflows:
     when: << pipeline.parameters.prep-release >>
     jobs:
       - slack/approval-notification:
-        message: TEST - Pending Approval for rebase of release branch into main
-        channel: 'shelbys-test-channel'
-        color: '#0E1111'
+          message: TEST - Pending Approval for rebase of release branch into main
+          channel: 'shelbys-test-channel'
+          color: '#0E1111'
       - build-all
       - hold: # Requires manual approval in Circle Ci
           type: approval
-      - merge-release-branch
+      - merge-release-branch:
+          e: default-executor
           requires:
             - build-all
             - hold
