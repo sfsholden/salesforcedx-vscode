@@ -101,7 +101,8 @@
       "command": "./scripts/prep-release-workflow.sh",
       "type": "shell",
       "args": [
-        "${input:circleCiId}"
+        "${input:circleCiId}",
+        "${input:releaseBranch}"
       ]
     },
     {
