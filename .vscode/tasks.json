@@ -147,6 +147,11 @@
       "id": "circleCiId",
       "type": "promptString",
       "description": "CircleCi Token"
+    },
+    {
+      "id": "releaseBranch",
+      "type": "promptString",
+      "description": "Provide the release version (Ex 49.11.0)"
     }
   ]
 }
