@@ -254,7 +254,8 @@ commands:
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
             LOWER_VERSION="`echo -e "${RELEASE_VERSION} ${MAIN_RELEASE_VERSION}" | sort -V | cut --delimiter " " --fields 2`"
             echo "Lower version was: ${LOWER_VERSION}"
-            if (( ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} )); then
+            if [ ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} ]
+            then
               echo "Main is on an earlier version from the release branch. We do not want to merge in an old branch. Exiting."
               exit 1;
             fi
