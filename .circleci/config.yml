@@ -252,14 +252,13 @@ commands:
             echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
             source $BASH_ENV
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
-            LOWER_VERSION="`echo -e "${RELEASE_VERSION}\n${MAIN_RELEASE_VERSION}" | sort -V`"
+            LOWER_VERSION="`echo -e "${MAIN_RELEASE_VERSION}\n${RELEASE_VERSION}" | sort -V | cut --delimiter $'\n' --fields 1`"
             echo "Lower version was: ${LOWER_VERSION}"
             if [ ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} ]
             then
-              echo "Main is on an earlier version from the release branch. We do not want to merge in an old branch. Exiting."
+              echo "The release branch is older than main. We do not want to rebase off of an old branch. Exiting."
               exit 1;
             fi
-  # | cut --delimiter " " --fields 2
 
 executors:
   default-executor:
@@ -419,8 +418,7 @@ jobs:
       - run:
           name: 'Merge changes from main back into develop'
           command: |
-            git checkout develop
-            git merge main
+            git merge develop main
             git push
       - slack/notify:
           channel: 'shelbys-test-channel'
@@ -476,16 +474,15 @@ jobs:
       - prepare-release-env-variables
       - merge-validation
       - run:
-          name: 'Rebasing main off of release branch'
+          name: 'Merging release branch into main'
           command: |
-            git checkout main
-            echo "Rebasing main off of release branch ${RELEASE_VERSION}"
-          # git rebase release/v${RELEASE_VERSION}
-          # git push
+            echo "Merging release branch ${RELEASE_VERSION} into main"
+            git merge main release/v${RELEASE_VERSION}
+            git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
-          message: 'TEST - Main should now be rebased off of the release branch ${RELEASE_VERSION}'
+          message: 'TEST - release branch ${RELEASE_VERSION} should now be merged into main'
       - slack/status:
           channel: 'shelbys-test-channel'
           fail_only: true
