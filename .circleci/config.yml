@@ -252,13 +252,14 @@ commands:
             echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
             source $BASH_ENV
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
-            LOWER_VERSION="`echo -e "${RELEASE_VERSION} ${MAIN_RELEASE_VERSION}" | sort -V | cut --delimiter " " --fields 2`"
+            LOWER_VERSION="`echo -e "${RELEASE_VERSION}\n${MAIN_RELEASE_VERSION}" | sort -V`"
             echo "Lower version was: ${LOWER_VERSION}"
             if [ ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} ]
             then
               echo "Main is on an earlier version from the release branch. We do not want to merge in an old branch. Exiting."
               exit 1;
             fi
+  # | cut --delimiter " " --fields 2
 
 executors:
   default-executor:
@@ -479,8 +480,8 @@ jobs:
           command: |
             git checkout main
             echo "Rebasing main off of release branch ${RELEASE_VERSION}"
-            git rebase release/v${RELEASE_VERSION}
-            git push
+          # git rebase release/v${RELEASE_VERSION}
+          # git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
