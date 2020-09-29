@@ -495,8 +495,8 @@ jobs:
           command: |
             git checkout main
             echo "Rebasing main off of release branch ${RELEASE_VERSION}"
-            git rebase release/v${RELEASE_VERSION}
-            git push
+          # git rebase release/v${RELEASE_VERSION}
+          # git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
