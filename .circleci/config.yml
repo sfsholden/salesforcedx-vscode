@@ -121,27 +121,6 @@ commands:
       - run: npm --version
       - run: node --version
 
-  merge-release-branch:
-    parameters:
-      production-branch:
-        type: string
-        default: 'main'
-      develop-branch:
-        type: string
-        default: 'develop'
-    steps:
-      - run:
-          name: 'Merging release branch into production branch and develop branch'
-          command: |
-            echo "Merging release/v${RELEASE_VERSION} into << parameters.production-branch >>"
-            git checkout << parameters.production-branch >>
-            git merge release/v${RELEASE_VERSION}
-            git push
-            echo "Merging release/v${RELEASE_VERSION}" into << parameters.develop-branch >>"
-            git checkout << parameters.develop-branch >>
-            git merge release/v${RELEASE_VERSION}
-            git push
-
   package-extensions:
     steps:
       - run:
@@ -488,12 +467,13 @@ jobs:
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#FFDEAD'
-          message: 'TEST - Merging latest release branch into main'
+          message: 'TEST - Merging release branch ${RELEASE_VERSION} into main'
       - ssh-config
       - checkout
       - prepare-release-env-variables
       - merge-validation
       - run:
+          name: 'Rebasing main off of release branch'
           command: |
             git checkout main
             echo "Rebasing main off of release branch ${RELEASE_VERSION}"
