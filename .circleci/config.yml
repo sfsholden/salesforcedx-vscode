@@ -479,8 +479,8 @@ jobs:
           command: |
             git checkout main
             echo "Rebasing main off of release branch ${RELEASE_VERSION}"
-          # git rebase release/v${RELEASE_VERSION}
-          # git push
+            git rebase release/v${RELEASE_VERSION}
+            git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
@@ -535,13 +535,13 @@ workflows:
           message: TEST - Pending Approval for rebase of release branch into main
           channel: 'shelbys-test-channel'
           color: '#0E1111'
-      #- build-all
+      - build-all
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - merge-release-branch:
           e: default-executor
           requires:
-            #- build-all
+            - build-all
             - hold
           filters:
             branches:
