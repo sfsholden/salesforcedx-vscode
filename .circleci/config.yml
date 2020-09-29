@@ -267,14 +267,14 @@ commands:
         default: './packages/salesforcedx-vscode/package.json'
     steps:
       - run:
-          name: 'Prepare main release version'
+          name: 'Validate release version against main'
           command: |
             git checkout main
             echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
             source $BASH_ENV
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
-            HIGHEST_VERSION="`echo -e "$MAIN_RELEASE_VERSION\n$RELEASE_VERSION\n" | sort -V | head -n1`"
-            echo "Highest version was: $HIGHEST_VERSION"
+            HIGHEST_VERSION="`echo -e "${MAIN_RELEASE_VERSION}\n${RELEASE_VERSION}\n" | sort -V | head -n1`"
+            echo "Highest version was: ${HIGHEST_VERSION}"
       #- TODO - verify that the release branch is not already present in main.
 
 executors:
