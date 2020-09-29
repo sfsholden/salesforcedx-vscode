@@ -535,13 +535,13 @@ workflows:
           message: TEST - Pending Approval for rebase of release branch into main
           channel: 'shelbys-test-channel'
           color: '#0E1111'
-      - build-all
+      #- build-all
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - merge-release-branch:
           e: default-executor
           requires:
-            - build-all
+            #- build-all
             - hold
           filters:
             branches:
