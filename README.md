@@ -1,5 +1,4 @@
-Just a test. As well~
-Here's my other change.
+Just a test. As well~ W00t
 
 # Salesforce Extensions for VS Code
 
