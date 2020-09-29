@@ -252,11 +252,11 @@ commands:
             echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
             source $BASH_ENV
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
-            LOWER_VERSION="`echo -e "${RELEASE_VERSION} ${MAIN_RELEASE_VERSION}" | sort -V | cut --delimiter " " --fields 2`"
+            LOWER_VERSION="`echo -e "${MAIN_RELEASE_VERSION}\n${RELEASE_VERSION}" | sort -V | cut --delimiter $'\n' --fields 1`"
             echo "Lower version was: ${LOWER_VERSION}"
             if [ ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} ]
             then
-              echo "Main is on an earlier version from the release branch. We do not want to merge in an old branch. Exiting."
+              echo "The release branch is older than main. We do not want to rebase off of an old branch. Exiting."
               exit 1;
             fi
 
@@ -535,13 +535,13 @@ workflows:
           message: TEST - Pending Approval for rebase of release branch into main
           channel: 'shelbys-test-channel'
           color: '#0E1111'
-      - build-all
+      # - build-all
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - merge-release-branch:
           e: default-executor
           requires:
-            - build-all
+            # - build-all
             - hold
           filters:
             branches:
