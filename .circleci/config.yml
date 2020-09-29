@@ -252,7 +252,7 @@ commands:
             echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
             source $BASH_ENV
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
-            LOWER_VERSION="`echo -e "${MAIN_RELEASE_VERSION}\n${RELEASE_VERSION}" | sort -V | cut --fields 1`"
+            LOWER_VERSION="`echo -e "${MAIN_RELEASE_VERSION}\n${RELEASE_VERSION}" | sort -V | cut --delimiter "\\n" --fields 1`"
             echo "Lower version was: ${LOWER_VERSION}"
             if [ ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} ]
             then
