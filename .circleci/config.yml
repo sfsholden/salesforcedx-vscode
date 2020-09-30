@@ -470,6 +470,7 @@ jobs:
           color: '#FFDEAD'
           message: 'TEST - Merging release branch ${RELEASE_VERSION} into main'
       - ssh-config
+      - gh-config
       - checkout
       - prepare-release-env-variables
       - merge-validation
