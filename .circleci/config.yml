@@ -418,8 +418,9 @@ jobs:
       - run:
           name: 'Merge changes from main back into develop'
           command: |
-            git merge develop main
-            git push
+            git checkout develop
+            git merge main
+            git push origin develop
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#9bcd9b'
