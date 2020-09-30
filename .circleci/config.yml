@@ -479,6 +479,7 @@ jobs:
           command: |
             echo "Merging release branch ${RELEASE_VERSION} into main"
             git checkout main
+            git pull
             git rebase -Xtheirs release/v${RELEASE_VERSION}
             git push
       - slack/notify:
