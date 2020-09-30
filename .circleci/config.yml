@@ -479,7 +479,7 @@ jobs:
           command: |
             echo "Merging release branch ${RELEASE_VERSION} into main"
             git checkout main
-            git rebase release/v${RELEASE_VERSION}
+            git merge release/v${RELEASE_VERSION} --strategy=theirs
             git push
       - slack/notify:
           channel: 'shelbys-test-channel'
