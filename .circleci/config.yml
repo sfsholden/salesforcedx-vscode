@@ -481,7 +481,7 @@ jobs:
             git checkout main
             git pull
             git rebase -Xtheirs release/v${RELEASE_VERSION}
-            git push
+            git push -f
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
