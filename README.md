@@ -1,4 +1,5 @@
 Just a test. As well~ W00t
+This is the conflict.
 
 # Salesforce Extensions for VS Code
 
