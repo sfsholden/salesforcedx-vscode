@@ -418,8 +418,9 @@ jobs:
       - run:
           name: 'Merge changes from main back into develop'
           command: |
-            git merge develop main
-            git push
+            git checkout develop
+            git merge main
+            git push origin develop
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#9bcd9b'
@@ -471,14 +472,17 @@ jobs:
           message: 'TEST - Merging release branch ${RELEASE_VERSION} into main'
       - ssh-config
       - checkout
+      - gh-config
       - prepare-release-env-variables
       - merge-validation
       - run:
           name: 'Merging release branch into main'
           command: |
             echo "Merging release branch ${RELEASE_VERSION} into main"
-            git merge --strategy-option theirs main release/v${RELEASE_VERSION}
-            git push
+            git checkout main
+            git pull
+            git rebase -Xtheirs release/v${RELEASE_VERSION}
+            git push -f
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
