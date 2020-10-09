@@ -385,6 +385,7 @@ jobs:
           message: 'Starting publish for VSCode Extensions'
       - ssh-config
       - checkout
+      - prepare-release-env-variables
       - gus-prepare-environment-variables
       - restore_dependency_cache
       # - run:
@@ -419,6 +420,7 @@ jobs:
           name: 'Merge changes from main back into develop'
           command: |
             git checkout develop
+            git pull
             git merge main
             git push origin develop
       - slack/notify:
@@ -476,13 +478,12 @@ jobs:
       - prepare-release-env-variables
       - merge-validation
       - run:
-          name: 'Merging release branch into main'
+          name: 'Rebasing main off of release branch'
           command: |
-            echo "Merging release branch ${RELEASE_VERSION} into main"
+            echo "Rebasing main off of release branch ${RELEASE_VERSION}"
             git checkout main
-            git pull
             git rebase -Xtheirs release/v${RELEASE_VERSION}
-            git push -f
+            git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
