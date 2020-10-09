@@ -121,27 +121,6 @@ commands:
       - run: npm --version
       - run: node --version
 
-  merge-release-branch:
-    parameters:
-      production-branch:
-        type: string
-        default: 'main'
-      develop-branch:
-        type: string
-        default: 'develop'
-    steps:
-      - run:
-          name: 'Merging release branch into production branch and develop branch'
-          command: |
-            echo "Merging release/v${RELEASE_VERSION} into << parameters.production-branch >>"
-            git checkout << parameters.production-branch >>
-            git merge release/v${RELEASE_VERSION}
-            git push
-            echo "Merging release/v${RELEASE_VERSION}" into << parameters.develop-branch >>"
-            git checkout << parameters.develop-branch >>
-            git merge release/v${RELEASE_VERSION}
-            git push
-
   package-extensions:
     steps:
       - run:
@@ -260,20 +239,26 @@ commands:
             npm run lint
 
   merge-validation:
-    description: 'Verify the changes to merge are not present in main'
+    description: 'Verify the release branch is not older than main'
     parameters:
       package-json-path:
         type: string
         default: './packages/salesforcedx-vscode/package.json'
     steps:
       - run:
-          name: 'Prepare main release version'
+          name: 'Validate release version against main'
           command: |
             git checkout main
             echo "export MAIN_RELEASE_VERSION="$(node -pe "require('<< parameters.package-json-path >>').version")"" >> $BASH_ENV
             source $BASH_ENV
             echo "MAIN_RELEASE_VERSION is: ${MAIN_RELEASE_VERSION}"
-      #- TODO - verify that the release branch is not already present in main.
+            LOWER_VERSION="`echo -e "${MAIN_RELEASE_VERSION}\n${RELEASE_VERSION}" | sort -V | cut --delimiter $'\n' --fields 1`"
+            echo "Lower version was: ${LOWER_VERSION}"
+            if [ ${LOWER_VERSION} != ${MAIN_RELEASE_VERSION} ]
+            then
+              echo "The release branch is older than main. We do not want to rebase off of an old branch. Exiting."
+              exit 1;
+            fi
 
 executors:
   default-executor:
@@ -437,7 +422,7 @@ jobs:
             git checkout develop
             git pull
             git merge main
-            git push
+            git push origin develop
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#9bcd9b'
@@ -486,21 +471,23 @@ jobs:
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#FFDEAD'
-          message: 'TEST - Merging latest release branch into main'
+          message: 'TEST - Merging release branch ${RELEASE_VERSION} into main'
       - ssh-config
       - checkout
+      - gh-config
       - prepare-release-env-variables
       - merge-validation
       - run:
+          name: 'Rebasing main off of release branch'
           command: |
-            git checkout main
             echo "Rebasing main off of release branch ${RELEASE_VERSION}"
-            git rebase release/v${RELEASE_VERSION}
+            git checkout main
+            git rebase -Xtheirs release/v${RELEASE_VERSION}
             git push
       - slack/notify:
           channel: 'shelbys-test-channel'
           color: '#d8bfd8'
-          message: 'TEST - Main should now be rebased off of the release branch ${RELEASE_VERSION}'
+          message: 'TEST - release branch ${RELEASE_VERSION} should now be merged into main'
       - slack/status:
           channel: 'shelbys-test-channel'
           fail_only: true
@@ -551,13 +538,13 @@ workflows:
           message: TEST - Pending Approval for rebase of release branch into main
           channel: 'shelbys-test-channel'
           color: '#0E1111'
-      - build-all
+      # - build-all
       - hold: # Requires manual approval in Circle Ci
           type: approval
       - merge-release-branch:
           e: default-executor
           requires:
-            - build-all
+            # - build-all
             - hold
           filters:
             branches:
