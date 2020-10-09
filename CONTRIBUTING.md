@@ -1,3 +1,5 @@
+This is a test.
+
 ## Contributing
 
 1. Familiarize yourself with the codebase by reading the [docs](docs), in

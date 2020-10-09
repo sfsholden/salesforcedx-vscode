@@ -1,5 +1,4 @@
-Just a test. As well~ W00t
-This is the conflict.
+This is a test for a conflict.
 
 # Salesforce Extensions for VS Code
 
