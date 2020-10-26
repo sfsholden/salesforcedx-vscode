@@ -1,5 +1,3 @@
-This is a test for a conflict.
-
 # Salesforce Extensions for VS Code
 
 [![CircleCI](https://circleci.com/gh/forcedotcom/salesforcedx-vscode.svg?style=svg)](https://circleci.com/gh/forcedotcom/salesforcedx-vscode)
